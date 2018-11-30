@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>doc/html/boost_asio/example/cpp03/http/client/async_client.cpp - 1.68.0</title>
+  <link rel="stylesheet" type="text/css" href="/style-v2/section-doc.css" />
+  <!--[if IE 7]> <style type="text/css"> body { behavior: url(/style-v2/csshover3.htc); } </style> <![endif]-->
+
+</head>
+
+<body>
+  <div id="heading">
+    <div class="heading-inner">
+  <div class="heading-placard"></div>
+
+  <h1 class="heading-title">
+  <a href="/">
+  <img src="/gfx/space.png" alt= "Boost C++ Libraries" class="heading-logo" />
+  <span class="heading-boost">Boost</span>
+  <span class="heading-cpplibraries">C++ Libraries</span>
+  </a></h1>
+
+  <p class="heading-quote">
+  <q>...one of the most highly
+  regarded and expertly designed C++ library projects in the
+  world.</q> <span class="heading-attribution">&mdash; <a href=
+  "http://www.gotw.ca/" class="external">Herb Sutter</a> and <a href=
+  "http://en.wikipedia.org/wiki/Andrei_Alexandrescu" class="external">Andrei
+  Alexandrescu</a>, <a href=
+  "http://safari.awprofessional.com/?XmlId=0321113586" class="external">C++
+  Coding Standards</a></span></p>
+</div>
+  </div>
+  
+  <div id="body">
+    <div id="body-inner">
+      <div id="content">
+        <div class="section" id="docs">
+          <div class="section-0">
+            <div class="section-body">
+              <h3>doc/html/boost_asio/example/cpp03/http/client/async_client.cpp</h3>
+<pre>
+//
+// async_client.cpp
+// ~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>)
+//
+
+#include &lt;iostream&gt;
+#include &lt;istream&gt;
+#include &lt;ostream&gt;
+#include &lt;string&gt;
+#include &lt;<a href="../../../../../../../boost/asio.hpp">boost/asio.hpp</a>&gt;
+#include &lt;<a href="../../../../../../../boost/bind.hpp">boost/bind.hpp</a>&gt;
+
+using boost::asio::ip::tcp;
+
+class client
+{
+public:
+  client(boost::asio::io_context&amp; io_context,
+      const std::string&amp; server, const std::string&amp; path)
+    : resolver_(io_context),
+      socket_(io_context)
+  {
+    // Form the request. We specify the &quot;Connection: close&quot; header so that the
+    // server will close the socket after transmitting the response. This will
+    // allow us to treat all data up until the EOF as the content.
+    std::ostream request_stream(&amp;request_);
+    request_stream &lt;&lt; &quot;GET &quot; &lt;&lt; path &lt;&lt; &quot; HTTP/1.0\r\n&quot;;
+    request_stream &lt;&lt; &quot;Host: &quot; &lt;&lt; server &lt;&lt; &quot;\r\n&quot;;
+    request_stream &lt;&lt; &quot;Accept: */*\r\n&quot;;
+    request_stream &lt;&lt; &quot;Connection: close\r\n\r\n&quot;;
+
+    // Start an asynchronous resolve to translate the server and service names
+    // into a list of endpoints.
+    resolver_.async_resolve(server, &quot;http&quot;,
+        boost::bind(&amp;client::handle_resolve, this,
+          boost::asio::placeholders::error,
+          boost::asio::placeholders::results));
+  }
+
+private:
+  void handle_resolve(const boost::system::error_code&amp; err,
+      const tcp::resolver::results_type&amp; endpoints)
+  {
+    if (!err)
+    {
+      // Attempt a connection to each endpoint in the list until we
+      // successfully establish a connection.
+      boost::asio::async_connect(socket_, endpoints,
+          boost::bind(&amp;client::handle_connect, this,
+            boost::asio::placeholders::error));
+    }
+    else
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err.message() &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  void handle_connect(const boost::system::error_code&amp; err)
+  {
+    if (!err)
+    {
+      // The connection was successful. Send the request.
+      boost::asio::async_write(socket_, request_,
+          boost::bind(&amp;client::handle_write_request, this,
+            boost::asio::placeholders::error));
+    }
+    else
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err.message() &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  void handle_write_request(const boost::system::error_code&amp; err)
+  {
+    if (!err)
+    {
+      // Read the response status line. The response_ streambuf will
+      // automatically grow to accommodate the entire line. The growth may be
+      // limited by passing a maximum size to the streambuf constructor.
+      boost::asio::async_read_until(socket_, response_, &quot;\r\n&quot;,
+          boost::bind(&amp;client::handle_read_status_line, this,
+            boost::asio::placeholders::error));
+    }
+    else
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err.message() &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  void handle_read_status_line(const boost::system::error_code&amp; err)
+  {
+    if (!err)
+    {
+      // Check that response is OK.
+      std::istream response_stream(&amp;response_);
+      std::string http_version;
+      response_stream &gt;&gt; http_version;
+      unsigned int status_code;
+      response_stream &gt;&gt; status_code;
+      std::string status_message;
+      std::getline(response_stream, status_message);
+      if (!response_stream || http_version.substr(0, 5) != &quot;HTTP/&quot;)
+      {
+        std::cout &lt;&lt; &quot;Invalid response\n&quot;;
+        return;
+      }
+      if (status_code != 200)
+      {
+        std::cout &lt;&lt; &quot;Response returned with status code &quot;;
+        std::cout &lt;&lt; status_code &lt;&lt; &quot;\n&quot;;
+        return;
+      }
+
+      // Read the response headers, which are terminated by a blank line.
+      boost::asio::async_read_until(socket_, response_, &quot;\r\n\r\n&quot;,
+          boost::bind(&amp;client::handle_read_headers, this,
+            boost::asio::placeholders::error));
+    }
+    else
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  void handle_read_headers(const boost::system::error_code&amp; err)
+  {
+    if (!err)
+    {
+      // Process the response headers.
+      std::istream response_stream(&amp;response_);
+      std::string header;
+      while (std::getline(response_stream, header) &amp;&amp; header != &quot;\r&quot;)
+        std::cout &lt;&lt; header &lt;&lt; &quot;\n&quot;;
+      std::cout &lt;&lt; &quot;\n&quot;;
+
+      // Write whatever content we already have to output.
+      if (response_.size() &gt; 0)
+        std::cout &lt;&lt; &amp;response_;
+
+      // Start reading remaining data until EOF.
+      boost::asio::async_read(socket_, response_,
+          boost::asio::transfer_at_least(1),
+          boost::bind(&amp;client::handle_read_content, this,
+            boost::asio::placeholders::error));
+    }
+    else
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  void handle_read_content(const boost::system::error_code&amp; err)
+  {
+    if (!err)
+    {
+      // Write all of the data that has been read so far.
+      std::cout &lt;&lt; &amp;response_;
+
+      // Continue reading remaining data until EOF.
+      boost::asio::async_read(socket_, response_,
+          boost::asio::transfer_at_least(1),
+          boost::bind(&amp;client::handle_read_content, this,
+            boost::asio::placeholders::error));
+    }
+    else if (err != boost::asio::error::eof)
+    {
+      std::cout &lt;&lt; &quot;Error: &quot; &lt;&lt; err &lt;&lt; &quot;\n&quot;;
+    }
+  }
+
+  tcp::resolver resolver_;
+  tcp::socket socket_;
+  boost::asio::streambuf request_;
+  boost::asio::streambuf response_;
+};
+
+int main(int argc, char* argv[])
+{
+  try
+  {
+    if (argc != 3)
+    {
+      std::cout &lt;&lt; &quot;Usage: async_client &lt;server&gt; &lt;path&gt;\n&quot;;
+      std::cout &lt;&lt; &quot;Example:\n&quot;;
+      std::cout &lt;&lt; &quot;  async_client www.boost.org /LICENSE_1_0.txt\n&quot;;
+      return 1;
+    }
+
+    boost::asio::io_context io_context;
+    client c(io_context, argv[1], argv[2]);
+    io_context.run();
+  }
+  catch (std::exception&amp; e)
+  {
+    std::cout &lt;&lt; &quot;Exception: &quot; &lt;&lt; e.what() &lt;&lt; &quot;\n&quot;;
+  }
+
+  return 0;
+}
+</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> 
+ </div>
+</body>
+</html>

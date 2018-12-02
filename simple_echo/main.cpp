@@ -53,6 +53,22 @@ private:
 #endif // DEBUG
 				n = send_get_header(bytes_transferred);
 			}
+			else if ((data_[0] == 'H') && (data_[1] == 'E') && (data_[2] == 'A') && (data_[3] == 'D'))
+			{//HEAD request
+#ifdef DEBUG
+				data_[bytes_transferred] = 0;
+				printf("REQUEST = %s\n", data_);
+#endif // DEBUG
+				n = send_head_header(bytes_transferred);
+			}
+			else if ((data_[0] == 'P') && (data_[1] == 'O') && (data_[2] == 'S') && (data_[3] == 'T'))
+			{//HEAD request
+#ifdef DEBUG
+				data_[bytes_transferred] = 0;
+				printf("REQUEST = %s\n", data_);
+#endif // DEBUG
+				n = send_post_header(bytes_transferred);
+			}
 			else
 			{
 				sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>Don't understand you yet</h1></body></html>\n\r");
@@ -157,6 +173,132 @@ private:
 			memcpy(data_+ cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len+1;
+#ifdef DEBUG
+			printf("FINAL_DATA = %s\n", data_);
+#endif // DEBUG
+			fclose(f);
+		}
+		data_[n] = 0;
+		data_[n - 1] = 0;
+#ifdef DEBUG
+		printf("LENGTH = %d\n", n);
+#endif // DEBUG
+		return n;
+	}
+	int send_head_header(int leng)
+	{
+		int i, n;
+		i = 6;
+		//printf("%d\n", bytes_transferred);
+		while ((data_[i] != ' ') && (i < leng - 1)
+			&& (data_[i] != '\n') && (data_[i] != 0)) {
+			name_of[i - 6] = data_[i];
+			i++;
+		}
+		name_of[i - 6] = 0;
+		FILE *f = fopen(name_of, "rb");
+#ifdef DEBUG
+		printf("%s\n", name_of);
+#endif // DEBUG
+
+		if (!f)
+		{//no such file
+			html_code[0] = 0;
+			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				strlen(html_code), "text/html", "close\r\n");
+			n = strlen(data_);
+
+			strcat(data_, html_code);
+			n = strlen(data_)+1;
+		}
+		else
+		{
+			char type[16];
+			int len_name = strlen(name_of), flag = 0;
+			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
+				sprintf(type, "image/png");
+				flag = 1;
+			}
+			else sprintf(type, "text/html");
+			n = 0;
+			//if (!flag) {
+			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				n, type, "close\r\n");
+			//}
+			//else
+			//	data_[0] = data_[1] = 0;
+			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
+			memcpy(data_ + cur_len, html_code, n);
+			//strcat(data_, html_code);
+			n += cur_len + 1;
+#ifdef DEBUG
+			printf("FINAL_DATA = %s\n", data_);
+#endif // DEBUG
+			fclose(f);
+		}
+		data_[n] = 0;
+		data_[n - 1] = 0;
+#ifdef DEBUG
+		printf("LENGTH = %d\n", n);
+#endif // DEBUG
+		return n;
+	}
+	int send_post_header(int leng)
+	{
+		int i, n;
+		i = 6;
+		//printf("%d\n", bytes_transferred);
+		while ((data_[i] != ' ') && (i < leng - 1)
+			&& (data_[i] != '\n') && (data_[i] != 0)) {
+			name_of[i - 6] = data_[i];
+			i++;
+		}
+		name_of[i - 6] = 0;
+		FILE *f = fopen(name_of, "rb");
+#ifdef DEBUG
+		printf("%s\n", name_of);
+#endif // DEBUG
+
+		if (!f)
+		{//no such file
+			html_code[0] = 0;
+			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				strlen(html_code), "text/html", "close\r\n");
+			n = strlen(data_);
+
+			strcat(data_, html_code);
+			n = strlen(data_) + 1;
+		}
+		else
+		{
+			char type[16];
+			int len_name = strlen(name_of), flag = 0;
+			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
+				sprintf(type, "image/png");
+				flag = 1;
+			}
+			else sprintf(type, "text/html");
+			n = 0;
+			//if (!flag) {
+			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				n, type, "close\r\n");
+			//}
+			//else
+			//	data_[0] = data_[1] = 0;
+			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
+			memcpy(data_ + cur_len, html_code, n);
+			//strcat(data_, html_code);
+			n += cur_len + 1;
 #ifdef DEBUG
 			printf("FINAL_DATA = %s\n", data_);
 #endif // DEBUG

@@ -107,9 +107,10 @@ private:
 
 		if (!f)
 		{//no such file
-			sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>404 Not Found</h1>%s</body></html>\n\r", name_of);
-			sprintf(data_, "Request URL:http://localhost/\n\rRequest Method : GET\n\rStatus Code : 404 ERROR\n\rServer: %s\r\nTime: %s\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: %s\r\n",
-				"my", /*boost::posix_time::second_clock::local_time()*/ "Fri, 08 Oct 2010 08:35:53 GMT", "text/html", strlen(html_code), "close");
+			sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>404 Not Found</h1>%s</body></html>\r\n", name_of);
+			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				strlen(html_code), "text/html", "close\r\n");
 			n = strlen(data_);
 
 			strcat(data_, html_code);
@@ -137,32 +138,32 @@ private:
 					break;
 			}
 			if (!flag) {
-				html_code[i++] = '\n';
 				html_code[i++] = '\r';
+				html_code[i++] = '\n';
 				html_code[i] = 0;
 			}
 			n = i;
-			if (!flag) {
-				sprintf(data_, "HTTP/1.1 200 OK\n\rServer: %s\n\rContent-Length: %d\n\rContent-Type: %s\n\rConnection: %s\n\r",
+			//if (!flag) {
+				sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
 					"my  (Win32)",
 					n, type, "close\r\n");
-			}
-			else
-				data_[0] = data_[1] = 0;
+			//}
+			//else
+			//	data_[0] = data_[1] = 0;
 			int cur_len = strlen(data_);
 #ifdef DEBUG
 			printf("DATA = %s\n", data_);
 #endif // DEBUG
 			memcpy(data_+ cur_len, html_code, n);
 			//strcat(data_, html_code);
-			n += cur_len;
+			n += cur_len+1;
 #ifdef DEBUG
 			printf("FINAL_DATA = %s\n", data_);
 #endif // DEBUG
 			fclose(f);
 		}
 		data_[n] = 0;
-		//data_[n - 1] = 0;
+		data_[n - 1] = 0;
 #ifdef DEBUG
 		printf("LENGTH = %d\n", n);
 #endif // DEBUG

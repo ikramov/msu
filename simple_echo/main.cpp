@@ -7,7 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-
+#define DEBUG 1
 #include <cstdlib>
 #include <iostream>
 #include <boost/bind.hpp>
@@ -44,43 +44,14 @@ private:
 	{
 		if (!error)
 		{
-			int i, n;
+			int n;
 			if ((data_[0] == 'G') && (data_[1] == 'E') && (data_[2] == 'T'))
 			{//GET request
-				i = 5;
-				//printf("%d\n", bytes_transferred);
-				while ((data_[i] != ' ') && (i < bytes_transferred-1)
-					&& (data_[i] != '\n') && (data_[i]!=0)) {
-					name_of[i - 5] = data_[i];
-					i++;
-				}
-				name_of[i-5] = 0;
-				FILE *f = fopen(name_of, "rb");
-				if (!f)
-				{//no such file
-					sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>404 Not Found</h1>%s</body></html>\n\r", name_of);
-					strcpy(data_, html_code);
-					n = strlen(html_code);
-				}
-				else
-				{
-					char buf[256];
-					i = 0;
-					while (1) {
-						n = fread(buf, 1, 256, f);
-						memcpy(data_ + i, buf, n);
-						i+=n;
-						if (i >= max_length-3)
-							break;
-						if (n < 256)
-							break;
-					}
-					data_[i++] = '\n';
-					data_[i++] = '\r';
-					data_[i] = 0;
-					n = i;
-					fclose(f);		
-				}
+#ifdef DEBUG
+				data_[bytes_transferred] = 0;
+				printf("REQUEST = %s\n", data_);
+#endif // DEBUG
+				n = send_get_header(bytes_transferred);
 			}
 			else
 			{
@@ -118,6 +89,85 @@ private:
 	enum { max_length = 28024 };
 	char data_[max_length];
 	char html_code[max_length], name_of[1000];
+	int send_get_header(int leng)
+	{
+		int i, n;
+		i = 5;
+		//printf("%d\n", bytes_transferred);
+		while ((data_[i] != ' ') && (i < leng - 1)
+			&& (data_[i] != '\n') && (data_[i] != 0)) {
+			name_of[i - 5] = data_[i];
+			i++;
+		}
+		name_of[i - 5] = 0;
+		FILE *f = fopen(name_of, "rb");
+#ifdef DEBUG
+		printf("%s\n", name_of);
+#endif // DEBUG
+
+		if (!f)
+		{//no such file
+			sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>404 Not Found</h1>%s</body></html>\n\r", name_of);
+			sprintf(data_, "Request URL:http://localhost/\n\rRequest Method : GET\n\rStatus Code : 404 ERROR\n\rServer: %s\r\nTime: %s\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: %s\r\n",
+				"my", /*boost::posix_time::second_clock::local_time()*/ "Fri, 08 Oct 2010 08:35:53 GMT", "text/html", strlen(html_code), "close");
+			n = strlen(data_);
+
+			strcat(data_, html_code);
+			n = strlen(data_);
+		}
+		else
+		{
+			char type[16];
+			int len_name = strlen(name_of), flag = 0;
+			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
+				sprintf(type, "image/png");
+				flag = 1;
+			}
+			else sprintf(type, "text/html");
+			char buf[256];
+			i = 0;
+			
+			while (1) {
+				n = fread(buf, 1, 256, f);
+				memcpy(html_code + i, buf, n);
+				i += n;
+				if (i >= max_length - 3)
+					break;
+				if (n < 256)
+					break;
+			}
+			if (!flag) {
+				html_code[i++] = '\n';
+				html_code[i++] = '\r';
+				html_code[i] = 0;
+			}
+			n = i;
+			if (!flag) {
+				sprintf(data_, "HTTP/1.1 200 OK\n\rServer: %s\n\rContent-Length: %d\n\rContent-Type: %s\n\rConnection: %s\n\r",
+					"my  (Win32)",
+					n, type, "close\r\n");
+			}
+			else
+				data_[0] = data_[1] = 0;
+			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
+			memcpy(data_+ cur_len, html_code, n);
+			//strcat(data_, html_code);
+			n += cur_len;
+#ifdef DEBUG
+			printf("FINAL_DATA = %s\n", data_);
+#endif // DEBUG
+			fclose(f);
+		}
+		data_[n] = 0;
+		//data_[n - 1] = 0;
+#ifdef DEBUG
+		printf("LENGTH = %d\n", n);
+#endif // DEBUG
+		return n;
+	}
 };
 
 class server

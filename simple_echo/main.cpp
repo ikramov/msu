@@ -215,6 +215,8 @@ private:
 		else
 		{
 			char type[16];
+			struct stat buff_stat;
+			fstat(fileno(f), &buff_stat);
 			int len_name = strlen(name_of), flag = 0;
 			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
 				sprintf(type, "image/png");
@@ -225,7 +227,7 @@ private:
 			//if (!flag) {
 			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
 				"my  (Win32)",
-				n, type, "close\r\n");
+				buff_stat.st_size, type, "close\r\n");
 			//}
 			//else
 			//	data_[0] = data_[1] = 0;

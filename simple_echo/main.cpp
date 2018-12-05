@@ -13,6 +13,8 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <string.h>
+#include <boost/thread.hpp>
+using boost::this_thread::get_id;
 
 using boost::asio::ip::tcp;
 
@@ -32,6 +34,9 @@ public:
 
 	void start()
 	{
+		using namespace std;
+		std::cout << "Thread " << get_id() << std::endl;
+		//printf("ID : %d\n", get_id());
 		socket_.async_read_some(boost::asio::buffer(data_, max_length),
 			boost::bind(&session::handle_read, this,
 				boost::asio::placeholders::error,
@@ -322,6 +327,8 @@ public:
 		: io_context_(io_context),
 		acceptor_(io_context, tcp::endpoint(tcp::v4(), port))
 	{
+		/*boost::thread t1{ &server::start_accept, this };
+		t1.join();*/
 		start_accept();
 	}
 
@@ -339,7 +346,7 @@ private:
 	{
 		if (!error)
 		{
-			new_session->start();
+			//new_session->start();
 		}
 		else
 		{

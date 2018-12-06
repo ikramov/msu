@@ -13,15 +13,15 @@
 int *free_threads;
 boost::fibers::mutex mtx;
 bool *data_ready;
-cond_var *vars, start_var;
+cond_var *vars;
 bool fresh_start = false;
 
 void session::start()
 {
 #ifdef DEBUG
-	std::cout << "Thread " << get_id() << " called start session with " << thread_number << std::endl;
+	std::cout << "Thread " << get_id() << " called start session" << std::endl;
 #endif // DEBUG
-	
+
 	socket_.async_read_some(boost::asio::buffer(data_, max_length),
 		boost::bind(&session::handle_read, this,
 			boost::asio::placeholders::error,
@@ -34,21 +34,29 @@ void session::handle_read(const boost::system::error_code& error,
 	if (!error)
 	{
 		int n;
-#ifdef DEBUG
-		data_[bytes_transferred] = 0;
-		std::cout << "Thread " << get_id() << std::endl;
-		printf("REQUEST = %s\n", data_);
-#endif // DEBUG
 		if ((data_[0] == 'G') && (data_[1] == 'E') && (data_[2] == 'T'))
 		{//GET request
+#ifdef DEBUG
+			data_[bytes_transferred] = 0;
+			std::cout << "Thread " << get_id() << std::endl;
+			printf("REQUEST = %s\n", data_);
+#endif // DEBUG
 			n = send_get_header(bytes_transferred);
 		}
 		else if ((data_[0] == 'H') && (data_[1] == 'E') && (data_[2] == 'A') && (data_[3] == 'D'))
 		{//HEAD request
+#ifdef DEBUG
+			data_[bytes_transferred] = 0;
+			printf("REQUEST = %s\n", data_);
+#endif // DEBUG
 			n = send_head_header(bytes_transferred);
 		}
 		else if ((data_[0] == 'P') && (data_[1] == 'O') && (data_[2] == 'S') && (data_[3] == 'T'))
 		{//HEAD request
+#ifdef DEBUG
+			data_[bytes_transferred] = 0;
+			printf("REQUEST = %s\n", data_);
+#endif // DEBUG
 			n = send_post_header(bytes_transferred);
 		}
 		else
@@ -64,14 +72,7 @@ void session::handle_read(const boost::system::error_code& error,
 	}
 	else
 	{
-		try {
-			free_threads[this->thread_number] = 1;
-			delete this;
-		}
-		catch (...)
-		{
-
-		}
+		delete this;
 	}
 }
 
@@ -84,15 +85,10 @@ void session::handle_write(const boost::system::error_code& error)
 				boost::asio::placeholders::error,
 				boost::asio::placeholders::bytes_transferred));
 	}
-	else {
-		try {
-			free_threads[this->thread_number] = 1;
-			delete this;
-		}
-		catch (...)
-		{
-
-		}
+	else
+	{
+		free_threads[this->thread_number] = 1;
+		delete this;
 	}
 }
 
@@ -158,6 +154,9 @@ int session::send_get_header(int leng)
 			//else
 			//	data_[0] = data_[1] = 0;
 			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
 			memcpy(data_+ cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len+1;
@@ -220,6 +219,9 @@ int session::send_head_header(int leng)
 			//else
 			//	data_[0] = data_[1] = 0;
 			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
 			memcpy(data_ + cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len + 1;
@@ -280,6 +282,9 @@ int session::send_post_header(int leng)
 			//else
 			//	data_[0] = data_[1] = 0;
 			int cur_len = strlen(data_);
+#ifdef DEBUG
+			printf("DATA = %s\n", data_);
+#endif // DEBUG
 			memcpy(data_ + cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len + 1;
@@ -302,16 +307,17 @@ void server::init()
 	data_ready = new bool[number_of_threads];
 	for (int i = 0; i < number_of_threads; i++) {
 		data_ready[i] = false;
-		free_threads[i] = 0;
+		free_threads[i] = 1;
 	}
 	vars = new cond_var[number_of_threads];
+	io_contexts = new boost::asio::io_context[number_of_threads];
 	threads = new boost::thread*[number_of_threads];
 
 	
 
 	for (int i = 0; i < number_of_threads; i++) {
+		io_contexts[i].run();
 		threads[i] = new boost::thread{ run_threads, i };
-		threads[i]->detach();
 	}
 
 	std::cout << "Thread " << get_id() << std::endl;
@@ -320,58 +326,40 @@ void server::init()
 }
 
 void server::free_resources(){
-	std::unique_lock< boost::fibers::mutex > lk(mtx);
 	fresh_start = false;
-		//for (int i = 0; i < number_of_threads; i++)
-		//	threads[i]->join();
+		for (int i = 0; i < number_of_threads; i++)
+			threads[i]->join();
 		delete[] threads;
 		delete[] vars;
 		delete[] data_ready;
 		delete[] free_threads;
-		threads = NULL;
-		vars = NULL;
-		data_ready = NULL;
-		free_threads = NULL;
+		delete[] io_contexts;
 }
 
 void server::start_accept()
 {
-	/*session* new_session = new session(io_context_);
-	acceptor_.async_accept(new_session->socket(),
-		boost::bind(&server::handle_accept, this, new_session,
-			boost::asio::placeholders::error));*/
-	start_var.set_data(io_context_, this, NULL);
-	fresh_start = true;
-	start_var.notify_all();
-}
-
-void server::handle_accept(session* new_session,
-	const boost::system::error_code& error, int num)
-{
-	if (!error)
-	{
-		//t1 = new boost::thread{ &session::start, new_session };
-		fresh_start = true;
-		int i = num;
+	//acceptor_.wait(boost::asio::ip::tcp::acceptor::wait_read);
+	boost::asio::ip::basic_endpoint<boost::asio::ip::tcp> ep = acceptor_.local_endpoint();
+	//ep.port(0);
+	acceptor_.bind(ep);
+	std::cout << "PORT " << acceptor_.local_endpoint().port() << endl;
+	boost::system::error_code ec;
+	boost::system::error_code e1 = acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+	if (!ec) {
+		/*fresh_start = true;
+		int i = 0;
+		while ((!free_threads[i]) && (i < number_of_threads))
+			i++;
 		if (i < number_of_threads)
 		{
-			{
-				std::unique_lock< boost::fibers::mutex > lk(mtx);
-				vars[i].set_data(io_context_, this, new_session);
-				data_ready[i] = true;
-				free_threads[i] = 0;
-				vars[i].notify_all();
-			}
-		}
-		//new_session->start();
+			//vars[i].set_data(io_contexts[i], this);
+			vars[i].set_data(io_context_, this);
+			data_ready[i] = true;
+			free_threads[i] = 0;
+		}*/
 	}
-	else
-	{
-		delete new_session;
-	}
-
-	start_accept();
 }
+
 
 void run_threads(int number)
 {
@@ -379,37 +367,19 @@ void run_threads(int number)
 #ifdef  DEBUG
 	std::cout << "Thread " << id_thr << " is " << number << std::endl;
 #endif //  
-	boost::asio::io_context io_context_cur;
 	while (1) {
 		{
 			std::unique_lock< boost::fibers::mutex > lk(mtx);
-			while (!fresh_start) {
-				start_var.wait(lk);
+			while ((!data_ready[number]) || (!fresh_start)) {
+				vars[number].wait(lk);
 			}
 		}
-		session* new_session = new session(io_context_cur, number);
-		start_var.get_server()->get_acceptor().async_accept(new_session->socket(),
-			boost::bind(&server::handle_accept, start_var.get_server(), new_session,
-				boost::asio::placeholders::error, number));
-		free_threads[number] = 1;
-		{
-			std::unique_lock< boost::fibers::mutex > lk(mtx);
-			while (!data_ready[number]) {
-				if (vars != NULL)
-					vars[number].wait(lk);
-				else
-					break;
-			}
-		}
-		if (vars != NULL) {
-			vars[number].get_session()->start();
-			data_ready[number] = false;
-			io_context_cur.run();
-		}
-		else
-			break;
-		/*vars[number].get_server()->get_acceptor().async_accept(new_session->socket(),
+		session* new_session = new session(*vars[number].get_context(), number);
+
+		//std::cout << "Local endpoint = " << new_session->socket().local_endpoint().port() << endl;
+
+		vars[number].get_server()->get_acceptor().async_accept(new_session->socket(),
 			boost::bind(&server::handle_accept, vars[number].get_server(), new_session,
-				boost::asio::placeholders::error));*/
+				boost::asio::placeholders::error));
 	}
 }

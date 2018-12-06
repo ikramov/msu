@@ -116,6 +116,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="server_manager.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Servers.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

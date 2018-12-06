@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 		boost::asio::io_context io_context;
 
 		using namespace std; // For atoi.
-		server s(io_context, atoi(argv[1]), 3);
+		server s(io_context, atoi(argv[1]), 1);
 		while (true) {
 			io_context.run();
 		}

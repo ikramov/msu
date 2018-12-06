@@ -14,7 +14,7 @@ int *free_threads;
 boost::fibers::mutex mtx;
 bool *data_ready;
 cond_var *vars, start_var;
-bool fresh_start = false;
+bool *fresh_start;
 
 void session::start()
 {
@@ -65,7 +65,10 @@ void session::handle_read(const boost::system::error_code& error,
 	else
 	{
 		try {
+			socket_.close();
 			free_threads[this->thread_number] = 1;
+			fresh_start[this->thread_number] = true;
+			start_var.notify_all();
 			delete this;
 		}
 		catch (...)
@@ -79,13 +82,33 @@ void session::handle_write(const boost::system::error_code& error)
 {
 	if (!error)
 	{
-		socket_.async_read_some(boost::asio::buffer(data_, max_length),
-			boost::bind(&session::handle_read, this,
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred));
+		socket_.close();
+		/*boost::system::error_code er;
+		socket_.read_some(boost::asio::buffer(data_, max_length), er);
+		if (!er) {
+			socket_.async_read_some(boost::asio::buffer(data_, max_length),
+				boost::bind(&session::handle_read, this,
+					boost::asio::placeholders::error,
+					boost::asio::placeholders::bytes_transferred));
+		}
+		else
+		{*/
+			try {
+				socket_.close();
+				free_threads[this->thread_number] = 1;
+				fresh_start[this->thread_number] = true;
+				start_var.notify_all();
+				delete this;
+			}
+			catch (...)
+			{
+
+			}
+		//}
 	}
 	else {
 		try {
+			socket_.close();
 			free_threads[this->thread_number] = 1;
 			delete this;
 		}
@@ -300,14 +323,14 @@ void server::init()
 {
 	free_threads = new int[number_of_threads];
 	data_ready = new bool[number_of_threads];
+	fresh_start = new bool[number_of_threads];
 	for (int i = 0; i < number_of_threads; i++) {
 		data_ready[i] = false;
-		free_threads[i] = 0;
+		free_threads[i] = 1;
+		fresh_start[i] = false;
 	}
 	vars = new cond_var[number_of_threads];
 	threads = new boost::thread*[number_of_threads];
-
-	
 
 	for (int i = 0; i < number_of_threads; i++) {
 		threads[i] = new boost::thread{ run_threads, i };
@@ -341,8 +364,19 @@ void server::start_accept()
 		boost::bind(&server::handle_accept, this, new_session,
 			boost::asio::placeholders::error));*/
 	start_var.set_data(io_context_, this, NULL);
-	fresh_start = true;
-	start_var.notify_all();
+	int i;
+	{
+		std::unique_lock< boost::fibers::mutex > lk(mtx);
+		for (i = 0; i < this->number_of_threads; i++) {
+			if (free_threads[i])
+				break;
+			else
+				fresh_start[i] = false;
+		}
+		if (i < number_of_threads)
+			fresh_start[i] = true;
+		start_var.notify_all();
+	}
 }
 
 void server::handle_accept(session* new_session,
@@ -351,7 +385,7 @@ void server::handle_accept(session* new_session,
 	if (!error)
 	{
 		//t1 = new boost::thread{ &session::start, new_session };
-		fresh_start = true;
+		//fresh_start[num] = true;
 		int i = num;
 		if (i < number_of_threads)
 		{
@@ -383,15 +417,17 @@ void run_threads(int number)
 	while (1) {
 		{
 			std::unique_lock< boost::fibers::mutex > lk(mtx);
-			while (!fresh_start) {
+			while (!fresh_start[number]) {
 				start_var.wait(lk);
 			}
 		}
+		free_threads[number] = 0;
+		fresh_start[number] = false;
 		session* new_session = new session(io_context_cur, number);
 		start_var.get_server()->get_acceptor().async_accept(new_session->socket(),
 			boost::bind(&server::handle_accept, start_var.get_server(), new_session,
 				boost::asio::placeholders::error, number));
-		free_threads[number] = 1;
+		//io_context_cur.run();
 		{
 			std::unique_lock< boost::fibers::mutex > lk(mtx);
 			while (!data_ready[number]) {
@@ -404,12 +440,10 @@ void run_threads(int number)
 		if (vars != NULL) {
 			vars[number].get_session()->start();
 			data_ready[number] = false;
+			io_context_cur.restart();
 			io_context_cur.run();
 		}
 		else
 			break;
-		/*vars[number].get_server()->get_acceptor().async_accept(new_session->socket(),
-			boost::bind(&server::handle_accept, vars[number].get_server(), new_session,
-				boost::asio::placeholders::error));*/
 	}
 }

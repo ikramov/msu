@@ -10,18 +10,25 @@
 
 #include "Servers.h"
 
+extern bool verbose;
+
+//array of values: free_threads[i]=0 means thread_i is busy, otherwise =1.
 int *free_threads;
-boost::fibers::mutex mtx;
+//mutex for locking critical sections
+boost::fibers::mutex mtx, mtx2;
+//array of values: data_ready[i]=true if data for thread_i is ready, otherwise =false
 bool *data_ready;
+//conditional variables that contain special values
 cond_var *vars, start_var;
+//array of values: if ready to start the thread
 bool *fresh_start;
 
 void session::start()
 {
-#ifdef DEBUG
+if(verbose){
 	std::cout << "Thread " << get_id() << " called start session with " << thread_number << std::endl;
-#endif // DEBUG
-	
+}
+	//register handler after reading from socket
 	socket_.async_read_some(boost::asio::buffer(data_, max_length),
 		boost::bind(&session::handle_read, this,
 			boost::asio::placeholders::error,
@@ -33,30 +40,33 @@ void session::handle_read(const boost::system::error_code& error,
 {
 	if (!error)
 	{
-		int n;
-#ifdef DEBUG
+		int n;	//length of output
+if(verbose){
 		data_[bytes_transferred] = 0;
 		std::cout << "Thread " << get_id() << std::endl;
 		printf("REQUEST = %s\n", data_);
-#endif // DEBUG
+}
 		if ((data_[0] == 'G') && (data_[1] == 'E') && (data_[2] == 'T'))
-		{//GET request
+		{//GET request send to handler
 			n = send_get_header(bytes_transferred);
 		}
 		else if ((data_[0] == 'H') && (data_[1] == 'E') && (data_[2] == 'A') && (data_[3] == 'D'))
-		{//HEAD request
+		{//HEAD request send to handler
 			n = send_head_header(bytes_transferred);
 		}
 		else if ((data_[0] == 'P') && (data_[1] == 'O') && (data_[2] == 'S') && (data_[3] == 'T'))
-		{//HEAD request
+		{//HEAD request send to handler
 			n = send_post_header(bytes_transferred);
 		}
 		else
-		{
-			sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>Don't understand you yet</h1></body></html>\n\r");
+		{//unknown request
+			sprintf(html_code, "HTTP / 1.1 404 ERROR\r\nServer: %s\r\nContent - Length: %d\r\nContent - Type: %s\r\nConnection: %s\r\n<html><head><title>ERROR</title></head><body><h1>Don't understand you yet</h1></body></html>\r\n",
+				"my  (Win32)",
+				strlen(html_code), "text/html", "close\r\n");
 			strcpy(data_, html_code);
 			n = strlen(html_code);
 		}
+		//register handler to do after write
 		boost::asio::async_write(socket_,
 			boost::asio::buffer(data_, n),
 			boost::bind(&session::handle_write, this,
@@ -64,6 +74,7 @@ void session::handle_read(const boost::system::error_code& error,
 	}
 	else
 	{
+		//if error close connection
 		try {
 			socket_.close();
 			free_threads[this->thread_number] = 1;
@@ -82,7 +93,7 @@ void session::handle_write(const boost::system::error_code& error)
 {
 	if (!error)
 	{
-		socket_.close();
+		//socket_.close();
 		/*boost::system::error_code er;
 		socket_.read_some(boost::asio::buffer(data_, max_length), er);
 		if (!er) {
@@ -94,6 +105,7 @@ void session::handle_write(const boost::system::error_code& error)
 		else
 		{*/
 			try {
+				//if here then all data is written close connection
 				socket_.close();
 				free_threads[this->thread_number] = 1;
 				fresh_start[this->thread_number] = true;
@@ -109,7 +121,9 @@ void session::handle_write(const boost::system::error_code& error)
 	else {
 		try {
 			socket_.close();
+			fresh_start[this->thread_number] = true;
 			free_threads[this->thread_number] = 1;
+			start_var.notify_all();
 			delete this;
 		}
 		catch (...)
@@ -122,18 +136,18 @@ void session::handle_write(const boost::system::error_code& error)
 int session::send_get_header(int leng)
 	{
 		int i, n;
-		i = 5;
+		i = 5;//shift determined by 'GET /' = 5 letters
 		//printf("%d\n", bytes_transferred);
 		while ((data_[i] != ' ') && (i < leng - 1)
 			&& (data_[i] != '\n') && (data_[i] != 0)) {
 			name_of[i - 5] = data_[i];
 			i++;
 		}
-		name_of[i - 5] = 0;
+		name_of[i - 5] = 0;//obtain name of file to open
 		FILE *f = fopen(name_of, "rb");
-#ifdef DEBUG
+if(verbose){
 		printf("%s\n", name_of);
-#endif // DEBUG
+}
 
 		if (!f)
 		{//no such file
@@ -157,7 +171,7 @@ int session::send_get_header(int leng)
 			else sprintf(type, "text/html");
 			char buf[256];
 			i = 0;
-			
+			//read file until end and copy to html_code buffer
 			while (1) {
 				n = fread(buf, 1, 256, f);
 				memcpy(html_code + i, buf, n);
@@ -172,35 +186,30 @@ int session::send_get_header(int leng)
 				html_code[i++] = '\n';
 				html_code[i] = 0;
 			}
-			n = i;
-			//if (!flag) {
-				sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
-					"my  (Win32)",
-					n, type, "close\r\n");
-			//}
-			//else
-			//	data_[0] = data_[1] = 0;
+			n = i;//size of the file
+			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+				"my  (Win32)",
+				n, type, "close\r\n");
 			int cur_len = strlen(data_);
+			//copy data to data_
 			memcpy(data_+ cur_len, html_code, n);
-			//strcat(data_, html_code);
 			n += cur_len+1;
 			data_[n] = 0;
 			data_[n - 1] = 0;
-#ifdef DEBUG
+if(verbose){
 			printf("FINAL_DATA = %s\n", data_);
-#endif // DEBUG
-			fclose(f);
+}
+			fclose(f);	//close file
 		}
-#ifdef DEBUG
+if(verbose){
 		printf("LENGTH = %d\n", n);
-#endif // DEBUG
+}
 		return n;
 	}
 int session::send_head_header(int leng)
 	{
 		int i, n;
 		i = 6;
-		//printf("%d\n", bytes_transferred);
 		while ((data_[i] != ' ') && (i < leng - 1)
 			&& (data_[i] != '\n') && (data_[i] != 0)) {
 			name_of[i - 6] = data_[i];
@@ -208,10 +217,9 @@ int session::send_head_header(int leng)
 		}
 		name_of[i - 6] = 0;
 		FILE *f = fopen(name_of, "rb");
-#ifdef DEBUG
+if(verbose){
 		printf("%s\n", name_of);
-#endif // DEBUG
-
+}
 		if (!f)
 		{//no such file
 			html_code[0] = 0;
@@ -246,16 +254,16 @@ int session::send_head_header(int leng)
 			memcpy(data_ + cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len + 1;
-#ifdef DEBUG
+if(verbose){
 			printf("FINAL_DATA = %s\n", data_);
-#endif // DEBUG
+}
 			fclose(f);
 		}
 		data_[n] = 0;
 		data_[n - 1] = 0;
-#ifdef DEBUG
+if(verbose){
 		printf("LENGTH = %d\n", n);
-#endif // DEBUG
+}
 		return n;
 	}
 int session::send_post_header(int leng)
@@ -270,9 +278,9 @@ int session::send_post_header(int leng)
 		}
 		name_of[i - 6] = 0;
 		FILE *f = fopen(name_of, "rb");
-#ifdef DEBUG
+if(verbose){
 		printf("%s\n", name_of);
-#endif // DEBUG
+}
 
 		if (!f)
 		{//no such file
@@ -306,21 +314,22 @@ int session::send_post_header(int leng)
 			memcpy(data_ + cur_len, html_code, n);
 			//strcat(data_, html_code);
 			n += cur_len + 1;
-#ifdef DEBUG
+if(verbose){
 			printf("FINAL_DATA = %s\n", data_);
-#endif // DEBUG
+}
 			fclose(f);
 		}
 		data_[n] = 0;
 		data_[n - 1] = 0;
-#ifdef DEBUG
+if(verbose){
 		printf("LENGTH = %d\n", n);
-#endif // DEBUG
+}
 		return n;
 	}
 
 void server::init()
 {
+	//initialization of data
 	free_threads = new int[number_of_threads];
 	data_ready = new bool[number_of_threads];
 	fresh_start = new bool[number_of_threads];
@@ -336,8 +345,9 @@ void server::init()
 		threads[i] = new boost::thread{ run_threads, i };
 		threads[i]->detach();
 	}
-
-	std::cout << "Thread " << get_id() << std::endl;
+	if (verbose) {
+		std::cout << "Thread " << get_id() << std::endl;
+	}
 	//t1 = new boost::thread{ &server::start_accept, this };
 	start_accept();
 }
@@ -345,8 +355,8 @@ void server::init()
 void server::free_resources(){
 	std::unique_lock< boost::fibers::mutex > lk(mtx);
 	fresh_start = false;
-		//for (int i = 0; i < number_of_threads; i++)
-		//	threads[i]->join();
+		for (int i = 0; i < number_of_threads; i++)
+			delete threads[i];
 		delete[] threads;
 		delete[] vars;
 		delete[] data_ready;
@@ -397,7 +407,6 @@ void server::handle_accept(session* new_session,
 				vars[i].notify_all();
 			}
 		}
-		//new_session->start();
 	}
 	else
 	{
@@ -410,13 +419,13 @@ void server::handle_accept(session* new_session,
 void run_threads(int number)
 {
 	boost::thread::id id_thr = get_id();
-#ifdef  DEBUG
-	std::cout << "Thread " << id_thr << " is " << number << std::endl;
-#endif //  
+	if (verbose) {
+		std::cout << "Thread " << id_thr << " is " << number << std::endl;
+	}
 	boost::asio::io_context io_context_cur;
 	while (1) {
 		{
-			std::unique_lock< boost::fibers::mutex > lk(mtx);
+			std::unique_lock< boost::fibers::mutex > lk(mtx2);
 			while (!fresh_start[number]) {
 				start_var.wait(lk);
 			}
@@ -427,7 +436,6 @@ void run_threads(int number)
 		start_var.get_server()->get_acceptor().async_accept(new_session->socket(),
 			boost::bind(&server::handle_accept, start_var.get_server(), new_session,
 				boost::asio::placeholders::error, number));
-		//io_context_cur.run();
 		{
 			std::unique_lock< boost::fibers::mutex > lk(mtx);
 			while (!data_ready[number]) {

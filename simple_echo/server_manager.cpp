@@ -1,6 +1,8 @@
 #include <boost/program_options.hpp>
 #include "Servers.h"
 
+bool verbose = false;
+
 using namespace boost::program_options;
 
 class server_manager{

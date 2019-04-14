@@ -7,7 +7,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-
+#pragma once
 #include "Servers.h"
 
 extern bool verbose;
@@ -43,6 +43,8 @@ void session::handle_read(const boost::system::error_code& error,
 		int n;	//length of output
 if(verbose){
 		data_[bytes_transferred] = 0;
+		data_[bytes_transferred+1] = 0;
+		data_[bytes_transferred + 2] = 0;
 		std::cout << "Thread " << get_id() << std::endl;
 		printf("REQUEST = %s\n", data_);
 }
@@ -266,66 +268,159 @@ if(verbose){
 }
 		return n;
 	}
-int session::send_post_header(int leng)
-	{
-		int i, n;
-		i = 6;
-		//printf("%d\n", bytes_transferred);
-		while ((data_[i] != ' ') && (i < leng - 1)
-			&& (data_[i] != '\n') && (data_[i] != 0)) {
-			name_of[i - 6] = data_[i];
-			i++;
-		}
-		name_of[i - 6] = 0;
-		FILE *f = fopen(name_of, "rb");
-if(verbose){
-		printf("%s\n", name_of);
+
+/////////////POST
+//LANGUAGE:
+/*
+delpage page_name					1
+delpar page_name par_number			2
+addpar page_name par_number text	3
+*/
+
+int get_command(char *cmnd)
+{
+	if ((cmnd[0] == 'd') && (cmnd[1] == 'e') && (cmnd[2] == 'l') && (cmnd[3] == 'p') && (cmnd[4] == 'a') && (cmnd[5] == 'g') && (cmnd[1] == 'e'))
+		return 1;
+	else if ((cmnd[0] == 'd') && (cmnd[1] == 'e') && (cmnd[2] == 'l') && (cmnd[3] == 'p') && (cmnd[4] == 'a') && (cmnd[5] == 'r'))
+		return 2;
+	else if ((cmnd[0] == 'a') && (cmnd[1] == 'd') && (cmnd[2] == 'd') && (cmnd[3] == 'p') && (cmnd[4] == 'a') && (cmnd[5] == 'r'))
+		return 3;
+	else return 0;
 }
 
-		if (!f)
-		{//no such file
-			html_code[0] = 0;
-			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
-				"my  (Win32)",
-				strlen(html_code), "text/html", "close\r\n");
-			n = strlen(data_);
+void fill_OK_msg(char *_data)
+{
+	sprintf(_data, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: text/html\r\nConnection: %s\r\n",
+		"my  (Win32)", 0, "close\r\n");
+	return;
+}
 
-			strcat(data_, html_code);
-			n = strlen(data_) + 1;
+void fill_ERROR_msg(char *_data)
+{
+	sprintf(_data, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+		"my  (Win32)", 0, "text/html", "close\r\n");
+	return;
+}
+
+int session::send_post_header(int leng)
+	{
+		int i, n, j = 0, cm, result;
+		i = 5;
+
+		char command[10];
+		sscanf(data_+i, "%s", command);
+		i += strlen(command) + 1;
+		cm = get_command(command);
+		if (verbose) {
+			printf("COMMAND ID = %d\n", cm);
 		}
-		else
-		{
-			char type[16];
-			int len_name = strlen(name_of), flag = 0;
-			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
-				sprintf(type, "image/png");
-				flag = 1;
+		while ((data_[i] != ' ') && (i < leng - 1)
+			&& (data_[i] != '\n') && (data_[i] != 0)) {
+			name_of[j] = data_[i];
+			i++; j++;
+		}
+		name_of[j] = 0;
+
+		if (verbose) {
+			printf("NAME = %s\n", name_of);
+		}
+
+		name_of[j] = 0;
+		char type[16];
+		switch (cm) {
+		case 0:
+			if (verbose) {
+				printf("WRONG command\n");
 			}
-			else sprintf(type, "text/html");
+			fill_ERROR_msg(data_);
+			break;
+		case 1:
 			n = 0;
-			//if (!flag) {
-			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
-				"my  (Win32)",
-				n, type, "close\r\n");
-			//}
-			//else
-			//	data_[0] = data_[1] = 0;
-			int cur_len = strlen(data_);
-			memcpy(data_ + cur_len, html_code, n);
-			//strcat(data_, html_code);
-			n += cur_len + 1;
+			if (verbose) {
+				printf("DEL PAGE\n");
+			}
+			result = page::delete_page(name_of);
+			if (!result)
+			{
+				if (verbose) {
+					printf("FILE DELETED\n");
+				}
+				fill_OK_msg(data_);
+			}
+			else
+			{
+				if (verbose) {
+					printf("NO FILE FOUND\n");
+				}
+				fill_ERROR_msg(data_);
+			}
+			break;
+		case 2:
+		{
+			page xpage(name_of);
+			result = sscanf(data_ + i, "%d", &j);
+			if (result < 1) {
+				//error
+				fill_ERROR_msg(data_);
+			}
+			else
+			{
+				result = xpage.del_paragraph(j);
+				xpage.write_page();
+				fill_OK_msg(data_);
+			}
+		}
+			break;
+		case 3:
+		{
+			if (verbose) {
+				printf("ADD PARAGRAPH\n");
+			}
+			page xpage(name_of);
+			result = sscanf(data_ + i, "%d", &j);
+			if (verbose) {
+				printf("PAGE name = %s\r\nPAR No = %d\n", name_of, j);
+			}
+			if (result < 1)
+			{
+				if (verbose) {
+					printf("WRONG\n");
+				}
+				fill_ERROR_msg(data_);
+			}
+			else {
+				i++;
+				while (data_[i] != ' ')
+					i++;
+				i++;
+				n = i;
+				while (data_[n] != '\n')
+					n++;
+				data_[n] = 0;
+				if (verbose) {
+					printf("TEXT = %s\n", data_+i);
+				}
+				xpage.add_to_par(j, data_ + i);
+				xpage.write_page();
+				fill_OK_msg(data_);
+			}
+		}
+			break;
+		}
+		n = strlen(data_) + 1;
+if(verbose){
+		printf("%s\n", name_of);
+}	
 if(verbose){
 			printf("FINAL_DATA = %s\n", data_);
 }
-			fclose(f);
-		}
 		data_[n] = 0;
 		data_[n - 1] = 0;
 if(verbose){
 		printf("LENGTH = %d\n", n);
 }
 		return n;
-	}
+}
 
 void server::init()
 {
@@ -454,4 +549,252 @@ void run_threads(int number)
 		else
 			break;
 	}
+}
+
+/*********PARAGRAPH*********/
+//PARAGRAPH methods
+//void fill_par(char *val);
+int paragraph::fill_par(char *val)
+{
+	if (str != nullptr) {
+		delete[] str;
+		len = 0;
+	}
+	len = strlen(val);
+	str = new char[len+4];
+	strcpy(str, val);
+	return len;
+}
+
+//int del_par();
+int paragraph::del_par()
+{
+	if (str != nullptr) {
+		delete[] str;
+		str = nullptr;
+		len = 0;
+		return 0;
+	}
+	else
+		return 1;
+}
+//int add_text_to_par(char *text);
+int paragraph::add_text_to_par(char *text) {
+	int tlen = strlen(text), i;
+	char *tmp = new char[len + tlen + 4];
+	strcpy(tmp, str);
+	delete[] str;
+	str = tmp;
+	for (i = 0; i < tlen; i++)
+	{
+		str[len - 1 + i] = text[i];
+	}
+	str[len - 1 + i] = '\r';
+	i++;
+	str[len - 1 + i] = '\n';
+	i++;
+	str[len - 1 + i] = 0;
+	len = strlen(str);
+	return len;
+}
+
+/*********PAGE*********/
+//PAGE methods
+//int open_page();
+int page::open_page()
+{
+	if (pagename == nullptr)
+	{
+		throw std::domain_error("No page name specified");
+		return 0;
+	}
+	else
+	{
+		FILE *f = fopen(pagename, "r");
+
+		numpar = 0;
+		int symnum = 0, readn;
+		char symb, *buf = new char[BUF_LEN];
+		/*
+		while (true)
+		{//reading header
+			readn = fscanf(f, "%c", &symb);
+			if (readn < 1)
+			{
+			}
+			else
+			{
+				buf[symnum++] = symb;
+				if (symb == '<') {
+					readn = fscanf(f, "%c", &symb);		//b
+					if (readn < 1)
+						goto stop_pnt;
+					buf[symnum++] = symb;
+					readn = fscanf(f, "%c", &symb);		//o
+					if (readn < 1)
+						goto stop_pnt;
+					buf[symnum++] = symb;
+					readn = fscanf(f, "%c", &symb);		//d
+					if (readn < 1)
+						goto stop_pnt;
+					buf[symnum++] = symb;
+					readn = fscanf(f, "%c", &symb);		//y
+					if (readn < 1)
+						goto stop_pnt;
+					buf[symnum++] = symb;
+					readn = fscanf(f, "%c", &symb);		//>
+					if (readn < 1)
+						goto stop_pnt;
+					buf[symnum++] = symb;
+
+					if ((buf[symnum - 5] == 'b') && (buf[symnum - 4] == 'o') && (buf[symnum - 3] == 'd') &&
+						(buf[symnum - 2] == 'y') && (buf[symnum - 5] == '>'))
+					{
+						if (verbose)
+						{
+							printf("<body> reached\n");
+						}
+						readn = fscanf(f, "%c", &symb);
+						if (readn < 1)
+							goto stop_pnt;
+						buf[symnum++] = symb;
+						buf[symnum++] = 0;
+						if(par_arr[numpar++].fill_par(buf) > symnum)
+							throw length_error("Paragraph is longer than should be");
+						symnum = 0;
+						break;
+					}
+				}
+			}
+		}*/
+
+		while (true) {
+			//reading entity
+			readn = fscanf(f, "%c", &symb);
+			if (readn < 1)
+			{
+				//EOF
+				goto stop_pnt;
+			}
+			else
+			{
+				buf[symnum++] = symb;
+				if (symb == '\n')
+				{
+					buf[symnum] = 0;
+					par_arr[numpar++].fill_par(buf);
+					symnum = 0;
+				}	
+			}
+		}
+	stop_pnt:
+		if (verbose) {
+			printf("EOF %d\n", symnum);
+		}
+		fclose(f);
+		if (symnum > 0)
+		{
+			par_arr[numpar++].fill_par(buf);
+			return numpar;
+		}
+		//EOF
+		fclose(f);
+		return numpar;
+	}
+}
+
+//int open_page(char *pname);
+int page::open_page(char *pname)
+{
+	if (pagename != nullptr)
+	{
+		del_page();
+	}
+	int plen = strlen(pname); 
+	pagename = new char[plen+2]; 
+	strcpy(pagename, pname); 
+	return open_page();
+}
+//int del_page();
+int page::del_page()
+{
+	if (pagename != nullptr) {
+		delete[] pagename;
+		pagename = nullptr;
+		for (int i = 0; i < numpar; i++)
+		{
+			par_arr[i].del_par();
+		}
+		numpar = 0;
+		return 0;
+	}
+	return 1;
+}
+//int del_paragraph(int num);
+int page::del_paragraph(int num)
+{
+	if ((num >= numpar) || (num < 1))	//cannot delete paragraph by this number
+	{
+		return 1;
+	}
+	else
+	{
+		return par_arr[num].del_par();
+	}
+}
+//int insert_paragraph_at_end(char *text);
+int page::insert_paragraph_at_end(char *text)
+{
+	if (numpar > 0)
+	{
+		return par_arr[numpar++].fill_par(text);
+	}
+	else
+		return -1;
+}
+
+//int add_to_par(int num, char *text);
+int page::add_to_par(int num, char *text) {
+	if ((num >= numpar) || (num < 1))
+	{
+		return -1;
+	}
+	else
+	{
+		return par_arr[num].add_text_to_par(text);
+	}
+}
+
+//int write_page()
+int page::write_page()
+{
+	if (pagename == nullptr) {
+		throw invalid_argument("No opened page to write");
+		return 1;
+	}
+	FILE *f = fopen(pagename, "wb");
+	char *text;
+	int len;
+	for (int i = 0; i < numpar; i++)
+	{
+		len = par_arr[i].get_length();
+		if (len > 0) {
+			text = par_arr[i].get_par();
+			fwrite(text, 1, len, f);
+		}
+	}
+	fclose(f);
+	return 0;
+}
+
+//int delete_page()
+int page::delete_page() {
+	if (pagename != nullptr)
+	{
+		remove(pagename);
+		del_page();
+		pagename = nullptr;
+		return 0;
+	}
+	else return 1;
 }

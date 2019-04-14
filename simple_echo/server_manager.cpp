@@ -1,7 +1,7 @@
 #include <boost/program_options.hpp>
 #include "Servers.h"
 
-bool verbose = false;
+bool verbose = true;
 
 using namespace boost::program_options;
 

@@ -1,11 +1,15 @@
 #pragma once
 #define DEBUG 1
-#include <cstdlib>
-#include <iostream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <string.h>
 #include <boost/thread.hpp>
+#include <stdio.h>
+#include <Windows.h>
+#include <type_traits>
+#include <functional>
+#include <cstdlib>
+#include <iostream>
 using boost::this_thread::get_id;
 using namespace std;
 
@@ -15,7 +19,44 @@ using boost::asio::ip::tcp;
 using namespace boost::fibers;
 void run_threads(int number);
 
+class paragraph {
+protected:
+	char *str;
+	int len;
+public:
+	paragraph() :str(nullptr), len(0) {};
+	paragraph(char *s) { len = strlen(s); str = new char[len+4]; strcpy(str, s); }
+	~paragraph() { if (len) { delete[] str; len = 0; } }
+	int fill_par(char *val);	//returns length of loaded paragraph
+	int del_par();				//returns 0 if OK, 1 if is empty
+	int add_text_to_par(char *text);	//adds text to the end of the paragraph
+	inline int get_length() { return len; }	//returns the length of the paragraph
+	inline char * get_par() { return str; }	//gets paragraph's text
+};
 
+
+#define BUF_LEN 6000
+class page {
+protected:
+	std::array<paragraph, 100> par_arr;
+	int numpar;			//number of paragraphs in opened page
+	char *pagename;		//name of opened page
+	int open_page();	//returns number of paragraphs
+	int del_page();		//frees all memory including paragraphs
+public:
+	page() :numpar(0), pagename(nullptr) {};
+	page(char *pname) { int plen = strlen(pname); pagename = new char[plen+4]; strcpy(pagename, pname); open_page(); }
+	~page() { del_page(); }
+	inline char *get_page_name() { return pagename; }
+	inline bool is_page(char *name) { return (strcmp(name, pagename) == 0); }
+	int open_page(char *pname);	//opens page by name, returns number of paragraphs
+	int delete_page();			//deletes whole current page, returns 0 if OK, 1 if not
+	int del_paragraph(int num); //deletes paragraph[num], returns 0 if OK, 1 if not
+	int add_to_par(int num, char *text);	//adds text to paragraph[num], returns length of new paragraph if OK, -1 if not
+	int insert_paragraph_at_end(char *text); //returns length of text if OK, -1 if not
+	int write_page();			//writes changes on the disk, returns 0 if OK, 1 if not
+	static int delete_page(char *name) { return remove(name); }
+};
 
 class session
 {

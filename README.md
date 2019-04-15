@@ -1,17 +1,17 @@
 # msu
                  MSU projects
-HTTP-server
+# HTTP-server
 Derived from simple echo server by Christopher M. Kohlhoff
 
 Modified to be actual HTTP server with responds to GET requests, HEAD requests.
 
-As for 14 April 2019 added special POST requests' support. Special language is following:
+## As for 14 April 2019 added special POST requests' support. Special language is following:
 
 delpage page_name					          deletes page with name page_name
 delpar page_name par_number			    deletes paragraph #par_number in page page_name
 addpar page_name par_number text	  adds text to paragraph #par_number in page page_name
 
-As it is made on boost in Windows, no test scripts are made. But tester can run following commands by hands:
+### As it is made on boost in Windows, no test scripts are made. But tester can run following commands by hands:
 
 //compile and run project
 nc.exe localhost 80

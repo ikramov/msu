@@ -19,11 +19,11 @@ Netcat *for testing* and browser
 
 As of 14 April 2019 the project has special POST requests' support. Special language is following:
 
-- delpage page_name					          *deletes page with name page_name*
+- delpage page_name\	\	\	\	\	\ \ \ \ \ \ \ \ \ \ *deletes page with name page_name*
 
-- delpar page_name par_number			    *deletes paragraph #par_number in page page_name*
+- delpar page_name par_number\	\	\	\ \ \ \ *deletes paragraph #par_number in page page_name*
 
-- addpar page_name par_number text	  *adds text to paragraph #par_number in page page_name*
+- addpar page_name par_number text\	\ \ *adds text to paragraph #par_number in page page_name*
 
 ## Running the tests
 
@@ -54,7 +54,7 @@ POST delpage doc.html
 
 ## Acknowledgements
 
-Derived from simple echo server by Christopher M. Kohlhoff
+Derived from simple echo server by [Christopher M. Kohlhoff](https://www.boost.org/doc/libs/1_48_0/doc/html/boost_asio/example/echo/async_tcp_echo_server.cpp)
 
 ## License
 

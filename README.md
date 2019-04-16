@@ -21,9 +21,9 @@ As of 14 April 2019 the project has special POST requests' support. Special lang
 
 command                                  | description
 -----------------------------------------|---------------------------------------------------------
-delpage page_name                        | *deletes page with name page_name*
-delpar page_name par_number              | *deletes paragraph #par_number in page page_name*
-addpar page_name par_number text         | *adds text to paragraph #par_number in page page_name*
+**delpage** *page_name*                        | deletes page with name *page_name*
+**delpar** *page_name par_number*              | deletes paragraph *par_number* in page *page_name*
+**addpar** *page_name par_number text*         | adds *text* to paragraph *par_number* in page *page_name*
 
 ## Running the tests
 

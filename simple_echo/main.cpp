@@ -12,6 +12,11 @@
 
 extern bool verbose;
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//This is multi-thread HTTP server
+//In order to construct it in the way, I needed conditional variables,
+//global variables to be accessed by different threads
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //array of values: free_threads[i]=0 means thread_i is busy, otherwise =1.
 int *free_threads;
 //mutex for locking critical sections
@@ -38,14 +43,14 @@ if(verbose){
 void session::handle_read(const boost::system::error_code& error,
 	size_t bytes_transferred)
 {
-	if (!error)
+	if (!error)//no error
 	{
 		int n;	//length of output
 if(verbose){
 		data_[bytes_transferred] = 0;
 		data_[bytes_transferred+1] = 0;
 		data_[bytes_transferred + 2] = 0;
-		std::cout << "Thread " << get_id() << std::endl;
+		std::cout << "Thread " << get_id() << std::endl;	//we print current id of the thread
 		printf("REQUEST = %s\n", data_);
 }
 		if ((data_[0] == 'G') && (data_[1] == 'E') && (data_[2] == 'T'))
@@ -95,17 +100,6 @@ void session::handle_write(const boost::system::error_code& error)
 {
 	if (!error)
 	{
-		//socket_.close();
-		/*boost::system::error_code er;
-		socket_.read_some(boost::asio::buffer(data_, max_length), er);
-		if (!er) {
-			socket_.async_read_some(boost::asio::buffer(data_, max_length),
-				boost::bind(&session::handle_read, this,
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::bytes_transferred));
-		}
-		else
-		{*/
 			try {
 				//if here then all data is written close connection
 				socket_.close();
@@ -116,9 +110,8 @@ void session::handle_write(const boost::system::error_code& error)
 			}
 			catch (...)
 			{
-
+				//do nothing
 			}
-		//}
 	}
 	else {
 		try {
@@ -130,7 +123,7 @@ void session::handle_write(const boost::system::error_code& error)
 		}
 		catch (...)
 		{
-
+			//do nothing
 		}
 	}
 }
@@ -139,7 +132,6 @@ int session::send_get_header(int leng)
 	{
 		int i, n;
 		i = 5;//shift determined by 'GET /' = 5 letters
-		//printf("%d\n", bytes_transferred);
 		while ((data_[i] != ' ') && (i < leng - 1)
 			&& (data_[i] != '\n') && (data_[i] != 0)) {
 			name_of[i - 5] = data_[i];
@@ -153,18 +145,20 @@ if(verbose){
 
 		if (!f)
 		{//no such file
+			//we prepare special respond with error message
 			sprintf(html_code, "<html><head><title>ERROR</title></head><body><h1>404 Not Found</h1>%s</body></html>\r\n", name_of);
 			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
 				"my  (Win32)",
 				strlen(html_code), "text/html", "close\r\n");
 			n = strlen(data_);
-
+			//we write the text
 			strcat(data_, html_code);
 			n = strlen(data_);
 		}
 		else
 		{
 			char type[16];
+			//we open the file and get its type
 			int len_name = strlen(name_of), flag = 0;
 			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
 				sprintf(type, "image/png");
@@ -183,12 +177,12 @@ if(verbose){
 				if (n < 256)
 					break;
 			}
-			if (!flag) {
+			if (!flag) {//if text/html we write the end of the entity to output, so browser doesn't wait for continuation
 				html_code[i++] = '\r';
 				html_code[i++] = '\n';
 				html_code[i] = 0;
 			}
-			n = i;//size of the file
+			n = i;//size of the file, preparing the HEADer
 			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
 				"my  (Win32)",
 				n, type, "close\r\n");
@@ -209,53 +203,47 @@ if(verbose){
 		return n;
 	}
 int session::send_head_header(int leng)
-	{
-		int i, n;
-		i = 6;
-		while ((data_[i] != ' ') && (i < leng - 1)
-			&& (data_[i] != '\n') && (data_[i] != 0)) {
-			name_of[i - 6] = data_[i];
-			i++;
-		}
-		name_of[i - 6] = 0;
-		FILE *f = fopen(name_of, "rb");
+{//the same things like with GET request, but we don't write the entity to the respond
+	int i, n;
+	i = 6;
+	while ((data_[i] != ' ') && (i < leng - 1)
+		&& (data_[i] != '\n') && (data_[i] != 0)) {
+		name_of[i - 6] = data_[i];
+		i++;
+	}
+	name_of[i - 6] = 0;
+	FILE *f = fopen(name_of, "rb");
 if(verbose){
 		printf("%s\n", name_of);
 }
-		if (!f)
-		{//no such file
-			html_code[0] = 0;
-			sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
-				"my  (Win32)",
-				strlen(html_code), "text/html", "close\r\n");
-			n = strlen(data_);
-
-			strcat(data_, html_code);
+	if (!f)
+	{//no such file
+		html_code[0] = 0;
+		sprintf(data_, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+			"my  (Win32)",
+			strlen(html_code), "text/html", "close\r\n");
+		n = strlen(data_);
+					strcat(data_, html_code);
 			n = strlen(data_)+1;
+	}
+	else
+	{
+		char type[16];
+		struct stat buff_stat;
+		fstat(fileno(f), &buff_stat);
+		int len_name = strlen(name_of), flag = 0;
+		if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
+			sprintf(type, "image/png");
+			flag = 1;
 		}
-		else
-		{
-			char type[16];
-			struct stat buff_stat;
-			fstat(fileno(f), &buff_stat);
-			int len_name = strlen(name_of), flag = 0;
-			if ((strcmp(name_of + len_name - 3, "bmp") == 0) || (strcmp(name_of + len_name - 3, "png") == 0)) {
-				sprintf(type, "image/png");
-				flag = 1;
-			}
-			else sprintf(type, "text/html");
-			n = 0;
-			//if (!flag) {
-			sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
-				"my  (Win32)",
-				buff_stat.st_size, type, "close\r\n");
-			//}
-			//else
-			//	data_[0] = data_[1] = 0;
-			int cur_len = strlen(data_);
-			memcpy(data_ + cur_len, html_code, n);
-			//strcat(data_, html_code);
-			n += cur_len + 1;
+		else sprintf(type, "text/html");
+		n = 0;
+		sprintf(data_, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
+			"my  (Win32)",
+			buff_stat.st_size, type, "close\r\n");
+		int cur_len = strlen(data_);
+		memcpy(data_ + cur_len, html_code, n);
+		n += cur_len + 1;
 if(verbose){
 			printf("FINAL_DATA = %s\n", data_);
 }
@@ -266,8 +254,8 @@ if(verbose){
 if(verbose){
 		printf("LENGTH = %d\n", n);
 }
-		return n;
-	}
+	return n;
+}
 
 /////////////POST
 //LANGUAGE:
@@ -277,6 +265,7 @@ delpar page_name par_number			2
 addpar page_name par_number text	3
 */
 
+//! returns the code of the command from input
 int get_command(char *cmnd)
 {
 	if ((cmnd[0] == 'd') && (cmnd[1] == 'e') && (cmnd[2] == 'l') && (cmnd[3] == 'p') && (cmnd[4] == 'a') && (cmnd[5] == 'g') && (cmnd[1] == 'e'))
@@ -288,6 +277,7 @@ int get_command(char *cmnd)
 	else return 0;
 }
 
+//! if everything is OK, than we have standard message
 void fill_OK_msg(char *_data)
 {
 	sprintf(_data, "HTTP/1.1 200 OK\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: text/html\r\nConnection: %s\r\n",
@@ -295,6 +285,7 @@ void fill_OK_msg(char *_data)
 	return;
 }
 
+//! if it is not OK, we also have the standard respond
 void fill_ERROR_msg(char *_data)
 {
 	sprintf(_data, "HTTP/1.1 404 ERROR\r\nServer: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\nConnection: %s\r\n",
@@ -310,10 +301,11 @@ int session::send_post_header(int leng)
 		char command[10];
 		sscanf(data_+i, "%s", command);
 		i += strlen(command) + 1;
-		cm = get_command(command);
+		cm = get_command(command);	//we get the command
 		if (verbose) {
 			printf("COMMAND ID = %d\n", cm);
 		}
+		//getting the name of the file
 		while ((data_[i] != ' ') && (i < leng - 1)
 			&& (data_[i] != '\n') && (data_[i] != 0)) {
 			name_of[j] = data_[i];
@@ -355,7 +347,7 @@ int session::send_post_header(int leng)
 				fill_ERROR_msg(data_);
 			}
 			break;
-		case 2:
+		case 2:	//deleting paragraph from the page
 		{
 			page xpage(name_of);
 			result = sscanf(data_ + i, "%d", &j);
@@ -443,7 +435,6 @@ void server::init()
 	if (verbose) {
 		std::cout << "Thread " << get_id() << std::endl;
 	}
-	//t1 = new boost::thread{ &server::start_accept, this };
 	start_accept();
 }
 
@@ -464,10 +455,6 @@ void server::free_resources(){
 
 void server::start_accept()
 {
-	/*session* new_session = new session(io_context_);
-	acceptor_.async_accept(new_session->socket(),
-		boost::bind(&server::handle_accept, this, new_session,
-			boost::asio::placeholders::error));*/
 	start_var.set_data(io_context_, this, NULL);
 	int i;
 	{
@@ -489,8 +476,6 @@ void server::handle_accept(session* new_session,
 {
 	if (!error)
 	{
-		//t1 = new boost::thread{ &session::start, new_session };
-		//fresh_start[num] = true;
 		int i = num;
 		if (i < number_of_threads)
 		{
@@ -615,66 +600,13 @@ int page::open_page()
 		numpar = 0;
 		int symnum = 0, readn;
 		char symb, *buf = new char[BUF_LEN];
-		/*
-		while (true)
-		{//reading header
-			readn = fscanf(f, "%c", &symb);
-			if (readn < 1)
-			{
-			}
-			else
-			{
-				buf[symnum++] = symb;
-				if (symb == '<') {
-					readn = fscanf(f, "%c", &symb);		//b
-					if (readn < 1)
-						goto stop_pnt;
-					buf[symnum++] = symb;
-					readn = fscanf(f, "%c", &symb);		//o
-					if (readn < 1)
-						goto stop_pnt;
-					buf[symnum++] = symb;
-					readn = fscanf(f, "%c", &symb);		//d
-					if (readn < 1)
-						goto stop_pnt;
-					buf[symnum++] = symb;
-					readn = fscanf(f, "%c", &symb);		//y
-					if (readn < 1)
-						goto stop_pnt;
-					buf[symnum++] = symb;
-					readn = fscanf(f, "%c", &symb);		//>
-					if (readn < 1)
-						goto stop_pnt;
-					buf[symnum++] = symb;
-
-					if ((buf[symnum - 5] == 'b') && (buf[symnum - 4] == 'o') && (buf[symnum - 3] == 'd') &&
-						(buf[symnum - 2] == 'y') && (buf[symnum - 5] == '>'))
-					{
-						if (verbose)
-						{
-							printf("<body> reached\n");
-						}
-						readn = fscanf(f, "%c", &symb);
-						if (readn < 1)
-							goto stop_pnt;
-						buf[symnum++] = symb;
-						buf[symnum++] = 0;
-						if(par_arr[numpar++].fill_par(buf) > symnum)
-							throw length_error("Paragraph is longer than should be");
-						symnum = 0;
-						break;
-					}
-				}
-			}
-		}*/
-
 		while (true) {
 			//reading entity
 			readn = fscanf(f, "%c", &symb);
 			if (readn < 1)
 			{
 				//EOF
-				goto stop_pnt;
+				break;
 			}
 			else
 			{
@@ -687,7 +619,6 @@ int page::open_page()
 				}	
 			}
 		}
-	stop_pnt:
 		if (verbose) {
 			printf("EOF %d\n", symnum);
 		}

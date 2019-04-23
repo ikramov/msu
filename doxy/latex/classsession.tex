@@ -1,0 +1,43 @@
+\hypertarget{classsession}{}\section{session Class Reference}
+\label{classsession}\index{session@{session}}
+
+
+operates with requests and sends the respond  
+
+
+
+
+{\ttfamily \#include $<$Servers.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classsession_aba171d4b6627a93b189c4accbefac6ba}{session} (boost\+::asio\+::io\+\_\+context \&io\+\_\+context, int thr\+\_\+num)
+\item 
+\mbox{\Hypertarget{classsession_a877765bc7124ada6580ad2f748b4d72c}\label{classsession_a877765bc7124ada6580ad2f748b4d72c}} 
+tcp\+::socket \& \hyperlink{classsession_a877765bc7124ada6580ad2f748b4d72c}{socket} ()
+\begin{DoxyCompactList}\small\item\em returns current opened socket \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classsession_ad69144e27f558b8960efae132f2e15f4}\label{classsession_ad69144e27f558b8960efae132f2e15f4}} 
+void \hyperlink{classsession_ad69144e27f558b8960efae132f2e15f4}{start} ()
+\begin{DoxyCompactList}\small\item\em function that initializes waiting for requests and all variables \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classsession_a79eb1764d3a89cd90b04966918d7dd6c}\label{classsession_a79eb1764d3a89cd90b04966918d7dd6c}} 
+int \hyperlink{classsession_a79eb1764d3a89cd90b04966918d7dd6c}{get\+\_\+thread\+\_\+num} ()
+\begin{DoxyCompactList}\small\item\em returns current thread\textquotesingle{}s number \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+operates with requests and sends the respond 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classsession_aba171d4b6627a93b189c4accbefac6ba}\label{classsession_aba171d4b6627a93b189c4accbefac6ba}} 
+\index{session@{session}!session@{session}}
+\index{session@{session}!session@{session}}
+\subsubsection{\texorpdfstring{session()}{session()}}
+{\footnotesize\ttfamily session\+::session (\begin{DoxyParamCaption}\item[{boost\+::asio\+::io\+\_\+context \&}]{io\+\_\+context,  }\item[{int}]{thr\+\_\+num }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+standard constructor io\+\_\+context --- context of opened connection thr\+\_\+num --- this thread\textquotesingle{}s number to store 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+Servers.\+h\item 
+main.\+cpp\end{DoxyCompactItemize}

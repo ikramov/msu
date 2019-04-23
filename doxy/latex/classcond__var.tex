@@ -1,0 +1,46 @@
+\hypertarget{classcond__var}{}\section{cond\+\_\+var Class Reference}
+\label{classcond__var}\index{cond\+\_\+var@{cond\+\_\+var}}
+
+
+condition variables are used for communication between threads  
+
+
+
+
+{\ttfamily \#include $<$Servers.\+h$>$}
+
+Inheritance diagram for cond\+\_\+var\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classcond__var}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcond__var_a93dbd1d43db5b2c64fd740c240e2418c}\label{classcond__var_a93dbd1d43db5b2c64fd740c240e2418c}} 
+\hyperlink{classcond__var_a93dbd1d43db5b2c64fd740c240e2418c}{cond\+\_\+var} ()
+\begin{DoxyCompactList}\small\item\em standard constructor \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcond__var_aeee90ce194ac52729ec961359d489bfb}\label{classcond__var_aeee90ce194ac52729ec961359d489bfb}} 
+\hyperlink{classcond__var_aeee90ce194ac52729ec961359d489bfb}{$\sim$cond\+\_\+var} ()
+\begin{DoxyCompactList}\small\item\em standard destructor, no extra memory is used \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcond__var_a41eff0f79f6695bbaca67153559c4885}\label{classcond__var_a41eff0f79f6695bbaca67153559c4885}} 
+void \hyperlink{classcond__var_a41eff0f79f6695bbaca67153559c4885}{set\+\_\+data} (boost\+::asio\+::io\+\_\+context \&iocont, \hyperlink{classserver}{server} $\ast$serv, \hyperlink{classsession}{session} $\ast$s)
+\begin{DoxyCompactList}\small\item\em initializes the values of this class\textquotesingle{} object\textquotesingle{}s members \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcond__var_aa517d0951844aaa609600903635b887d}\label{classcond__var_aa517d0951844aaa609600903635b887d}} 
+boost\+::asio\+::io\+\_\+context $\ast$ \hyperlink{classcond__var_aa517d0951844aaa609600903635b887d}{get\+\_\+context} ()
+\begin{DoxyCompactList}\small\item\em returns the current io\+\_\+context \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcond__var_ae55f3716e292cca887be939fe8f10c26}\label{classcond__var_ae55f3716e292cca887be939fe8f10c26}} 
+\hyperlink{classserver}{server} $\ast$ \hyperlink{classcond__var_ae55f3716e292cca887be939fe8f10c26}{get\+\_\+server} ()
+\begin{DoxyCompactList}\small\item\em returns the pointer to current server \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}\label{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}} 
+\hyperlink{classsession}{session} $\ast$ \hyperlink{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}{get\+\_\+session} ()
+\begin{DoxyCompactList}\small\item\em returns the pointer to current session \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+condition variables are used for communication between threads 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+Servers.\+h\end{DoxyCompactItemize}

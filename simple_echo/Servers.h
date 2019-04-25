@@ -11,6 +11,24 @@
 #include <cstdlib>
 #include <iostream>
 
+/*!
+* \file
+* \author Alisher Ikramov
+* \date   April, 2019
+* \brief  HTTP server with support of GET, HEAD, POST requests
+*
+* \section DESCRIPTION
+*
+* server --- class for establishing connection between user and system, provides:
+* 1.	accepting of connection;
+* 2.	receiving the request;
+* 3.	sending the respond to the request.
+*
+* Requires:
+* boost v.1.68.0
+* netcat (optional)
+*/
+
 using boost::this_thread::get_id;
 using namespace std;
 
@@ -38,14 +56,18 @@ public:
 
 	//! constructor that stores the paragraph. 
 	//! copies incoming text from s and stores it into str.
-	paragraph(char *s) { len = strlen(s); str = new char[len+4]; strcpy(str, s); }
+	paragraph(
+		char *s		///< text of the paragraph
+	) { len = strlen(s); str = new char[len+4]; strcpy(str, s); }
 
 	//! default destructor
 	~paragraph() { if (len) { delete[] str; len = 0; } }
 															 
-	//! returns the length of loaded paragraph after removing old text
+	//! returns the length of loaded paragraph after removing old text 
 	//! and replacing it by new incoming text from val
-	int fill_par(char *val);	
+	int fill_par(
+		char *val	///< text of the paragraph, replaces the entire text
+	);	
 								 
 	//! deletes paragraph and frees memory. returns 0 if OK, 1 if is empty
 	int del_par();				
@@ -69,29 +91,27 @@ public:
 */
 class page {
 protected:
+	std::array<paragraph, 100> par_arr;	///< array of the paragraphs of the page
 
-	//! \var array of paragraphs
-	std::array<paragraph, 100> par_arr;
-
-	//! \var number of paragraphs in current page
-	int numpar;			//number of paragraphs in opened page
+	int numpar;			///< number of paragraphs in opened page
 
 	//! \var name of the current page
-	char *pagename;		//name of opened page
+	char *pagename;		///< name of currently opened page
 
 	//! hiden function to open page by the name in pagename
-	int open_page();	//returns number of paragraphs
+	int open_page();	///< returns current number of paragraphs
 
 	//! hiden function to destroy all allocated memory if any
-	int del_page();		//frees all memory including paragraphs
+	int del_page();		///< frees all memory including paragraphs
 public:
 	//! default constructor that puts 0's to member fields
 	page() :numpar(0), pagename(nullptr) {};
 
-	//! constructor
-	//! pname --- name of the page to open and process
+	//! constructor, 
 	//! stores pname in pagename, also opens this page
-	page(char *pname) { int plen = strlen(pname); pagename = new char[plen+4]; strcpy(pagename, pname); open_page(); }
+	page(
+		char *pname		///< name of the page to open and process
+	) { int plen = strlen(pname); pagename = new char[plen+4]; strcpy(pagename, pname); open_page(); }
 
 	//! destructor that calls del_page
 	~page() { del_page(); }
@@ -100,31 +120,42 @@ public:
 	inline char *get_page_name() { return pagename; }
 
 	//! compares current page name with name
-	inline bool is_page(char *name) { return (strcmp(name, pagename) == 0); }
+	//! \param[in]	name		name of the page to compare with
+	inline bool is_page(
+		char *name		///< name of the page to compare with
+	) { return (strcmp(name, pagename) == 0); }
 
-	//! opens page
-	//! pname --- name of the page to open
-	int open_page(char *pname);	//opens page by name, returns number of paragraphs
+	//! opens page and processes all paragraphs
+	//! \return		number of paragraphs
+	int open_page(
+		char *pname		///< name of the page to open
+	);	//opens page by name, returns number of paragraphs
 
 	//! deletes current page, returns 0 if OK, 1 if not
 	int delete_page();			
 
 	//! deletes current paragraph by its number
-	//! num --- the number of paragraph to delete, returns 0 if OK, 1 if not
+	//! \param[in]	num			the number of paragraph to delete
+	//! \return		0 if OK, 1 if not
 	int del_paragraph(int num);
 
 	//! adds text to paragraph
-	//! num --- the number of the paragraph to which we add text
-	//! text --- text to add to paragraph, returns length of new paragraph if OK, -1 if not
+	//! \param[in]	num			the number of the paragraph to which we add text
+	//! \param[in]	text		text to add to paragraph
+	//! \return		length of new paragraph if OK, -1 if not
 	int add_to_par(int num, char *text);
 
-	//! adds new paragraph at the end of the array, returns length of text if OK, -1 if not
+	//! adds new paragraph at the end of the array
+	//! \param[in]	text		new paragraph to add to the page's end
+	//! \return		length of text if OK, -1 if not
 	int insert_paragraph_at_end(char *text); 
 
-	//! writes changes of the page on the disk, returns 0 if OK, 1 if not
+	//! writes changes of the page on the disk
+	//! \return		0 if OK, 1 if not
 	int write_page();
 
 	//! deletes page from the drive by its name
+	//! \return		answer from the remove function
 	static int delete_page(char *name) { return remove(name); }
 };
 
@@ -135,13 +166,13 @@ class session
 {
 public:
 	//! standard constructor
-	//! io_context --- context of opened connection
-	//! thr_num --- this thread's number to store
+	//! \param[in]		io_context			context of opened connection
+	//! \param[in]		thr_num				this thread's number to store
 	session(boost::asio::io_context& io_context, int thr_num) : socket_(io_context),
 		thread_number(thr_num)
 	{	};
 
-	//! returns current opened socket
+	//!\return			current opened socket
 	tcp::socket& socket()
 	{		return socket_;	}
 
@@ -152,34 +183,36 @@ public:
 	int get_thread_num() { return thread_number; }
 
 private:
-	//! \var this thread's number
-	int thread_number;
+	int thread_number; ///< this thread's number
 
 	//! the function that answers for the event of incoming request,
 	//! it reads the buffer
+	//! \param[in]		error					error code returned from the system if any
+	//! \param[in]		bytes_transferred		number of bytes that are placed in the buffer
 	void handle_read(const boost::system::error_code& error,
 		size_t bytes_transferred);
 	
 	//! the function that is called in case of event of writing something in the socket
+	//! \param[in]		error					error code returned from the system if any
 	void handle_write(const boost::system::error_code& error);
 
-	//! \var current socket for this session
-	tcp::socket socket_;
+	tcp::socket socket_;		///<  current socket for this session
 	enum { max_length = 28024 };
 
-	//! \var buffer for storing requests and responds
-	char data_[max_length];
+	char data_[max_length];		///< buffer for storing requests and responds
 
-	//! \var variables for storing some data
-	char html_code[max_length], name_of[1000];
+	char html_code[max_length], name_of[1000];	///< variables for storing some data
 
 	//! prepares data_ section and fills it with GET header and entity (page or image)
+	//! \param[in]		leng		the length of the data in request
 	int send_get_header(int leng);
 
 	//! prepares data_ section and fills it with HEAD header (no entity, just information)
+	//! \param[in]		leng		the length of the data in request
 	int send_head_header(int leng); 
 
 	//! prepares data_ section and fills it with post header and runs some action in respond to request
+	//! \param[in]		leng		the length of the data in request
 	int send_post_header(int leng); 
 };
 
@@ -190,9 +223,9 @@ class server
 {
 public:
 	//! standard constructor, runs initializer
-	//! accepts opened io_context
-	//! port --- number, default is 80
-	//! the number of threads to run
+	//! \param[in]		io_context		accepts currently opened io_context
+	//! \param[in]		port			number, default is 80
+	//! \param[in]		num_threads		number of threads to run server in
 	server(boost::asio::io_context& io_context, short port, int num_threads)
 		: io_context_(io_context),
 		acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
@@ -207,11 +240,14 @@ public:
 		free_resources();
 	}
 
-	//! returns current acceptor
+	//! get function
+	//! \return		current acceptor
 	tcp::acceptor& get_acceptor() { return acceptor_; }
 
 	//! function that is called in answer to the event of accepting new incoming connection
-	//! gets link to new_session object, error code and the number of the thread
+	//! \param[in]		new_session			link to new_session object
+	//! \param[in]		error				error code if any
+	//! \param[in]		num					the number of the thread
 	void handle_accept(session* new_session,
 		const boost::system::error_code& error, int num);
 private:
@@ -224,17 +260,13 @@ private:
 	//! function that starts the connection and puts some handlers
 	void start_accept();
 	
-	//! \var the array of links to threads
-	boost::thread **threads;
+	boost::thread **threads;				///< the array of links to threads
 
-	//! \var the number of threads in this server
-	int number_of_threads;
+	int number_of_threads;					///< the number of threads in this server
 
-	//! \var the current context
-	boost::asio::io_context& io_context_;
+	boost::asio::io_context& io_context_;	///< the current context
 
-	//! \var the current acceptor
-	tcp::acceptor acceptor_;
+	tcp::acceptor acceptor_;				///< the current acceptor
 };
 
 /*! \class cond_var
@@ -243,14 +275,11 @@ private:
 class cond_var : public boost::fibers::condition_variable
 {
 private:
-	//! \var current io_context
-	boost::asio::io_context* iocontext;
+	boost::asio::io_context* iocontext;		///< current io_context
 
-	//! \var pointer to current server
-	server* serverlink;
+	server* serverlink;						///< pointer to current server
 
-	//! \var pointer to current session
-	session* new_sess;
+	session* new_sess;						///< pointer to current session
 public:
 	//! standard constructor
 	cond_var() : condition_variable() { iocontext = NULL; serverlink = NULL; };
@@ -259,6 +288,9 @@ public:
 	~cond_var() { };
 
 	//! initializes the values of this class' object's members
+	//! \param[in]		iocont			link to current io_context to store
+	//! \param[in]		serv			link to server class current object
+	//! \param[in]		s				link to session class current object
 	void set_data(boost::asio::io_context& iocont, server *serv, session *s)
 	{
 		new_sess = s;
@@ -266,12 +298,12 @@ public:
 		iocontext = &(iocont);
 	}
 
-	//! returns the current io_context
+	//! \return		the current io_context
 	boost::asio::io_context* get_context() { return iocontext; }
 
-	//! returns the pointer to current server
+	//! \return		the pointer to current server
 	server* get_server() { return serverlink; }
 
-	//! returns the pointer to current session
+	//! \return		the pointer to current session
 	session* get_session() { return new_sess; }
 };

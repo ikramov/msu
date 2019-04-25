@@ -1,7 +1,11 @@
 var searchData=
 [
-  ['_7econd_5fvar',['~cond_var',['../classcond__var.html#aeee90ce194ac52729ec961359d489bfb',1,'cond_var']]],
-  ['_7epage',['~page',['../classpage.html#a599995602a1df90cd29b26dd955cd93e',1,'page']]],
-  ['_7eparagraph',['~paragraph',['../classparagraph.html#a6c1a6d5356e7578782b9f7874065ff5a',1,'paragraph']]],
-  ['_7eserver',['~server',['../classserver.html#ae3de4182db6fe6c656036f9e4da49204',1,'server']]]
+  ['server',['server',['../classserver.html',1,'server'],['../classserver.html#a9ad81c9f749b6113ac9aebee191bb7ff',1,'server::server()']]],
+  ['server_5fmanager',['server_manager',['../classserver__manager.html',1,'']]],
+  ['servers_2eh',['Servers.h',['../_servers_8h.html',1,'']]],
+  ['session',['session',['../classsession.html',1,'session'],['../classsession.html#aba171d4b6627a93b189c4accbefac6ba',1,'session::session()']]],
+  ['set_5fdata',['set_data',['../classcond__var.html#a41eff0f79f6695bbaca67153559c4885',1,'cond_var']]],
+  ['socket',['socket',['../classsession.html#a877765bc7124ada6580ad2f748b4d72c',1,'session']]],
+  ['start',['start',['../classsession.html#ad69144e27f558b8960efae132f2e15f4',1,'session']]],
+  ['str',['str',['../classparagraph.html#a5fdae75d172b31c2f97061201bac07b4',1,'paragraph']]]
 ];

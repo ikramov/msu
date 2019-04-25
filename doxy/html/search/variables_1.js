@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['str',['str',['../classparagraph.html#a5fdae75d172b31c2f97061201bac07b4',1,'paragraph']]]
+  ['numpar',['numpar',['../classpage.html#ac98ed4bbad67f1981e117ccc488cc1b7',1,'page']]]
 ];

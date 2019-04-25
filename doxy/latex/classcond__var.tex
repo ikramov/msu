@@ -24,23 +24,64 @@ Inheritance diagram for cond\+\_\+var\+:\begin{figure}[H]
 \mbox{\Hypertarget{classcond__var_aeee90ce194ac52729ec961359d489bfb}\label{classcond__var_aeee90ce194ac52729ec961359d489bfb}} 
 \hyperlink{classcond__var_aeee90ce194ac52729ec961359d489bfb}{$\sim$cond\+\_\+var} ()
 \begin{DoxyCompactList}\small\item\em standard destructor, no extra memory is used \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classcond__var_a41eff0f79f6695bbaca67153559c4885}\label{classcond__var_a41eff0f79f6695bbaca67153559c4885}} 
 void \hyperlink{classcond__var_a41eff0f79f6695bbaca67153559c4885}{set\+\_\+data} (boost\+::asio\+::io\+\_\+context \&iocont, \hyperlink{classserver}{server} $\ast$serv, \hyperlink{classsession}{session} $\ast$s)
-\begin{DoxyCompactList}\small\item\em initializes the values of this class\textquotesingle{} object\textquotesingle{}s members \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classcond__var_aa517d0951844aaa609600903635b887d}\label{classcond__var_aa517d0951844aaa609600903635b887d}} 
+\item 
 boost\+::asio\+::io\+\_\+context $\ast$ \hyperlink{classcond__var_aa517d0951844aaa609600903635b887d}{get\+\_\+context} ()
-\begin{DoxyCompactList}\small\item\em returns the current io\+\_\+context \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classcond__var_ae55f3716e292cca887be939fe8f10c26}\label{classcond__var_ae55f3716e292cca887be939fe8f10c26}} 
+\item 
 \hyperlink{classserver}{server} $\ast$ \hyperlink{classcond__var_ae55f3716e292cca887be939fe8f10c26}{get\+\_\+server} ()
-\begin{DoxyCompactList}\small\item\em returns the pointer to current server \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}\label{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}} 
+\item 
 \hyperlink{classsession}{session} $\ast$ \hyperlink{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}{get\+\_\+session} ()
-\begin{DoxyCompactList}\small\item\em returns the pointer to current session \end{DoxyCompactList}\end{DoxyCompactItemize}
+\end{DoxyCompactItemize}
 
 
 \subsection{Detailed Description}
 condition variables are used for communication between threads 
 
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classcond__var_aa517d0951844aaa609600903635b887d}\label{classcond__var_aa517d0951844aaa609600903635b887d}} 
+\index{cond\+\_\+var@{cond\+\_\+var}!get\+\_\+context@{get\+\_\+context}}
+\index{get\+\_\+context@{get\+\_\+context}!cond\+\_\+var@{cond\+\_\+var}}
+\subsubsection{\texorpdfstring{get\+\_\+context()}{get\_context()}}
+{\footnotesize\ttfamily boost\+::asio\+::io\+\_\+context$\ast$ cond\+\_\+var\+::get\+\_\+context (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\begin{DoxyReturn}{Returns}
+the current io\+\_\+context 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcond__var_ae55f3716e292cca887be939fe8f10c26}\label{classcond__var_ae55f3716e292cca887be939fe8f10c26}} 
+\index{cond\+\_\+var@{cond\+\_\+var}!get\+\_\+server@{get\+\_\+server}}
+\index{get\+\_\+server@{get\+\_\+server}!cond\+\_\+var@{cond\+\_\+var}}
+\subsubsection{\texorpdfstring{get\+\_\+server()}{get\_server()}}
+{\footnotesize\ttfamily \hyperlink{classserver}{server}$\ast$ cond\+\_\+var\+::get\+\_\+server (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\begin{DoxyReturn}{Returns}
+the pointer to current server 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}\label{classcond__var_a624ff85e7f2850661ec9c408ef1a7a26}} 
+\index{cond\+\_\+var@{cond\+\_\+var}!get\+\_\+session@{get\+\_\+session}}
+\index{get\+\_\+session@{get\+\_\+session}!cond\+\_\+var@{cond\+\_\+var}}
+\subsubsection{\texorpdfstring{get\+\_\+session()}{get\_session()}}
+{\footnotesize\ttfamily \hyperlink{classsession}{session}$\ast$ cond\+\_\+var\+::get\+\_\+session (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\begin{DoxyReturn}{Returns}
+the pointer to current session 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcond__var_a41eff0f79f6695bbaca67153559c4885}\label{classcond__var_a41eff0f79f6695bbaca67153559c4885}} 
+\index{cond\+\_\+var@{cond\+\_\+var}!set\+\_\+data@{set\+\_\+data}}
+\index{set\+\_\+data@{set\+\_\+data}!cond\+\_\+var@{cond\+\_\+var}}
+\subsubsection{\texorpdfstring{set\+\_\+data()}{set\_data()}}
+{\footnotesize\ttfamily void cond\+\_\+var\+::set\+\_\+data (\begin{DoxyParamCaption}\item[{boost\+::asio\+::io\+\_\+context \&}]{iocont,  }\item[{\hyperlink{classserver}{server} $\ast$}]{serv,  }\item[{\hyperlink{classsession}{session} $\ast$}]{s }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+initializes the values of this class\textquotesingle{} object\textquotesingle{}s members 
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em iocont} & link to current io\+\_\+context to store \\
+\hline
+\mbox{\tt in}  & {\em serv} & link to server class current object \\
+\hline
+\mbox{\tt in}  & {\em s} & link to session class current object \\
+\hline
+\end{DoxyParams}
+
+
 The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
 \item 
-Servers.\+h\end{DoxyCompactItemize}
+\hyperlink{_servers_8h}{Servers.\+h}\end{DoxyCompactItemize}

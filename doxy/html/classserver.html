@@ -102,9 +102,7 @@ Public Member Functions</h2></td></tr>
 &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classserver.html#ae3de4182db6fe6c656036f9e4da49204">~server</a> ()</td></tr>
 <tr class="memdesc:ae3de4182db6fe6c656036f9e4da49204"><td class="mdescLeft">&#160;</td><td class="mdescRight">standard destructor, runs free_resources <br /></td></tr>
 <tr class="separator:ae3de4182db6fe6c656036f9e4da49204"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a90bbf4bdc02734ed4e82e4251090e929"><td class="memItemLeft" align="right" valign="top"><a id="a90bbf4bdc02734ed4e82e4251090e929"></a>
-tcp::acceptor &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classserver.html#a90bbf4bdc02734ed4e82e4251090e929">get_acceptor</a> ()</td></tr>
-<tr class="memdesc:a90bbf4bdc02734ed4e82e4251090e929"><td class="mdescLeft">&#160;</td><td class="mdescRight">returns current acceptor <br /></td></tr>
+<tr class="memitem:a90bbf4bdc02734ed4e82e4251090e929"><td class="memItemLeft" align="right" valign="top">tcp::acceptor &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classserver.html#a90bbf4bdc02734ed4e82e4251090e929">get_acceptor</a> ()</td></tr>
 <tr class="separator:a90bbf4bdc02734ed4e82e4251090e929"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a195cc0f2e527393bb307cee99804d66a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classserver.html#a195cc0f2e527393bb307cee99804d66a">handle_accept</a> (<a class="el" href="classsession.html">session</a> *new_session, const boost::system::error_code &amp;error, int num)</td></tr>
 <tr class="separator:a195cc0f2e527393bb307cee99804d66a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -151,11 +149,44 @@ tcp::acceptor &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class=
   </tr>
 </table>
 </div><div class="memdoc">
-<p>standard constructor, runs initializer accepts opened io_context port &mdash; number, default is 80 the number of threads to run </p>
+<p>standard constructor, runs initializer </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">io_context</td><td>accepts currently opened io_context </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">port</td><td>number, default is 80 </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_threads</td><td>number of threads to run server in </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a90bbf4bdc02734ed4e82e4251090e929"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a90bbf4bdc02734ed4e82e4251090e929">&#9670;&nbsp;</a></span>get_acceptor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">tcp::acceptor&amp; server::get_acceptor </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>get function </p><dl class="section return"><dt>Returns</dt><dd>current acceptor </dd></dl>
+
+</div>
+</div>
 <a id="a195cc0f2e527393bb307cee99804d66a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a195cc0f2e527393bb307cee99804d66a">&#9670;&nbsp;</a></span>handle_accept()</h2>
 
@@ -187,7 +218,14 @@ tcp::acceptor &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class=
         </tr>
       </table>
 </div><div class="memdoc">
-<p>function that is called in answer to the event of accepting new incoming connection gets link to new_session object, error code and the number of the thread </p>
+<p>function that is called in answer to the event of accepting new incoming connection </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">new_session</td><td>link to new_session object </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">error</td><td>error code if any </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num</td><td>the number of the thread </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

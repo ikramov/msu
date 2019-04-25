@@ -17,9 +17,8 @@ H\+T\+TP server\textquotesingle{}s main class.
 \mbox{\Hypertarget{classserver_ae3de4182db6fe6c656036f9e4da49204}\label{classserver_ae3de4182db6fe6c656036f9e4da49204}} 
 \hyperlink{classserver_ae3de4182db6fe6c656036f9e4da49204}{$\sim$server} ()
 \begin{DoxyCompactList}\small\item\em standard destructor, runs free\+\_\+resources \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classserver_a90bbf4bdc02734ed4e82e4251090e929}\label{classserver_a90bbf4bdc02734ed4e82e4251090e929}} 
 tcp\+::acceptor \& \hyperlink{classserver_a90bbf4bdc02734ed4e82e4251090e929}{get\+\_\+acceptor} ()
-\begin{DoxyCompactList}\small\item\em returns current acceptor \end{DoxyCompactList}\item 
+\item 
 void \hyperlink{classserver_a195cc0f2e527393bb307cee99804d66a}{handle\+\_\+accept} (\hyperlink{classsession}{session} $\ast$new\+\_\+session, const boost\+::system\+::error\+\_\+code \&error, int num)
 \end{DoxyCompactItemize}
 
@@ -34,18 +33,45 @@ H\+T\+TP server\textquotesingle{}s main class.
 \subsubsection{\texorpdfstring{server()}{server()}}
 {\footnotesize\ttfamily server\+::server (\begin{DoxyParamCaption}\item[{boost\+::asio\+::io\+\_\+context \&}]{io\+\_\+context,  }\item[{short}]{port,  }\item[{int}]{num\+\_\+threads }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
 
-standard constructor, runs initializer accepts opened io\+\_\+context port --- number, default is 80 the number of threads to run 
+standard constructor, runs initializer 
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em io\+\_\+context} & accepts currently opened io\+\_\+context \\
+\hline
+\mbox{\tt in}  & {\em port} & number, default is 80 \\
+\hline
+\mbox{\tt in}  & {\em num\+\_\+threads} & number of threads to run server in \\
+\hline
+\end{DoxyParams}
+
 
 \subsection{Member Function Documentation}
+\mbox{\Hypertarget{classserver_a90bbf4bdc02734ed4e82e4251090e929}\label{classserver_a90bbf4bdc02734ed4e82e4251090e929}} 
+\index{server@{server}!get\+\_\+acceptor@{get\+\_\+acceptor}}
+\index{get\+\_\+acceptor@{get\+\_\+acceptor}!server@{server}}
+\subsubsection{\texorpdfstring{get\+\_\+acceptor()}{get\_acceptor()}}
+{\footnotesize\ttfamily tcp\+::acceptor\& server\+::get\+\_\+acceptor (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+get function \begin{DoxyReturn}{Returns}
+current acceptor 
+\end{DoxyReturn}
 \mbox{\Hypertarget{classserver_a195cc0f2e527393bb307cee99804d66a}\label{classserver_a195cc0f2e527393bb307cee99804d66a}} 
 \index{server@{server}!handle\+\_\+accept@{handle\+\_\+accept}}
 \index{handle\+\_\+accept@{handle\+\_\+accept}!server@{server}}
 \subsubsection{\texorpdfstring{handle\+\_\+accept()}{handle\_accept()}}
 {\footnotesize\ttfamily void server\+::handle\+\_\+accept (\begin{DoxyParamCaption}\item[{\hyperlink{classsession}{session} $\ast$}]{new\+\_\+session,  }\item[{const boost\+::system\+::error\+\_\+code \&}]{error,  }\item[{int}]{num }\end{DoxyParamCaption})}
 
-function that is called in answer to the event of accepting new incoming connection gets link to new\+\_\+session object, error code and the number of the thread 
+function that is called in answer to the event of accepting new incoming connection 
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em new\+\_\+session} & link to new\+\_\+session object \\
+\hline
+\mbox{\tt in}  & {\em error} & error code if any \\
+\hline
+\mbox{\tt in}  & {\em num} & the number of the thread \\
+\hline
+\end{DoxyParams}
+
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
 \item 
-Servers.\+h\item 
+\hyperlink{_servers_8h}{Servers.\+h}\item 
 main.\+cpp\end{DoxyCompactItemize}

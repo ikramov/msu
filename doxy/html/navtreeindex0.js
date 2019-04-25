@@ -1,5 +1,9 @@
 var NAVTREEINDEX0 =
 {
+"_servers_8h.html":[1,0,0],
+"_servers_8h.html#a6ee39a1ed43f4c70217012691bdd5486":[1,0,0,7],
+"_servers_8h.html#a8b5839f71a3b6e7d64b2d5e9967e3dd1":[1,0,0,5],
+"_servers_8h.html#ad72dbcf6d0153db1b8d8a58001feed83":[1,0,0,6],
 "_servers_8h_source.html":[1,0,0],
 "annotated.html":[0,0],
 "classcond__var.html":[0,0,0],
@@ -59,6 +63,8 @@ var NAVTREEINDEX0 =
 "functions.html":[0,3,0],
 "functions_func.html":[0,3,1],
 "functions_vars.html":[0,3,2],
+"globals.html":[1,1,0],
+"globals_defs.html":[1,1,1],
 "hierarchy.html":[0,2],
 "index.html":[],
 "pages.html":[]

@@ -568,7 +568,8 @@ int paragraph::add_text_to_par(char *text) {
 	int tlen = strlen(text), i;
 	char *tmp = new char[len + tlen + 4];
 	strcpy(tmp, str);
-	delete[] str;
+	if (str != nullptr)
+		delete[] str;
 	str = tmp;
 	for (i = 0; i < tlen; i++)
 	{
@@ -590,13 +591,14 @@ int page::open_page()
 {
 	if (pagename == nullptr)
 	{
-		throw std::domain_error("No page name specified");
+		//throw std::domain_error("No page name specified");
 		return 0;
 	}
 	else
 	{
 		FILE *f = fopen(pagename, "r");
-
+		if (!f)
+			return 0;
 		numpar = 0;
 		int symnum = 0, readn;
 		char symb, *buf = new char[BUF_LEN];
@@ -700,7 +702,7 @@ int page::add_to_par(int num, char *text) {
 int page::write_page()
 {
 	if (pagename == nullptr) {
-		throw invalid_argument("No opened page to write");
+		//throw invalid_argument("No opened page to write");
 		return 1;
 	}
 	FILE *f = fopen(pagename, "wb");

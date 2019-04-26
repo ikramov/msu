@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <iostream>
 
+
 /*!
 * \file
 * \author Alisher Ikramov
@@ -124,6 +125,10 @@ public:
 	inline bool is_page(
 		char *name		///< name of the page to compare with
 	) { return (strcmp(name, pagename) == 0); }
+
+	inline char* get_paragraph(int num) { if ((num >= 0) && (num < numpar)) return par_arr[num].get_par(); 
+											else return 0;
+	}
 
 	//! opens page and processes all paragraphs
 	//! \return		number of paragraphs
@@ -306,4 +311,10 @@ public:
 
 	//! \return		the pointer to current session
 	session* get_session() { return new_sess; }
+};
+
+class TestPage {
+public:
+	TestPage() {};
+	void run();
 };

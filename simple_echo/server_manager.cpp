@@ -61,8 +61,16 @@ public:
         }   
 };
 
+//#define TEST 1
+
 int main(int argc, char* argv[])
 {
+#ifdef TEST
+	TestPage t;
+	t.run();
+	cout << "FINISHED. PRESS ENTER to end\n";
+	getchar();
+#else
 	try
 	{
 		if (argc != 2)
@@ -83,6 +91,6 @@ int main(int argc, char* argv[])
 	{
 		std::cerr << "Exception: " << e.what() << "\n";
 	}
-
+#endif
 	return 0;
 }

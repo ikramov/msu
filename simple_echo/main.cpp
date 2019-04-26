@@ -704,6 +704,8 @@ int page::write_page()
 		return 1;
 	}
 	FILE *f = fopen(pagename, "wb");
+	if (!f)
+		return 1;
 	char *text;
 	int len;
 	for (int i = 0; i < numpar; i++)
@@ -728,4 +730,53 @@ int page::delete_page() {
 		return 0;
 	}
 	else return 1;
+}
+
+
+//// TEST
+void TestPage::run() {
+	FILE *fn;
+	char sname[125];
+	/// SEARCH for the file name that does not exist
+	int i = rand() % 1000;
+	sprintf(sname, "pge%d.html", i);
+	fn = fopen(sname, "r");
+	while (fn) {
+		i = i * i + 1;
+		sprintf(sname, "pge%d.html", i);
+		fn = fopen(sname, "r");
+	}
+	/// FOUND it. Create new file
+	fn = fopen(sname, "w");
+	fprintf(fn, "<html>\n<head>\nWOW, it is a page!\n</head>\n<body>\n<br>HI, I AM a PAGE\n<br>TRY to catch me\n</body></html>\n");
+	fclose(fn);
+	/// CREATED
+	cout << "PAGE NAME : " << sname << '\n';
+	cout << "PRESS ENTER after you check the file\n";
+	getchar();
+	/// TEST 1. Open the page
+	page xy(sname);
+	cout << "TEST 1\nCOMPARE NAMES: " << (strcmp(xy.get_page_name(), sname) == 0 ? "OK" : "NOT OK") << '\n';
+	
+	/// TEST 2. Add text to paragraph 5
+	cout << "TEST 2\nADD paragraph : BEFORE : " << xy.get_paragraph(5) << '\n';
+	cout << "RESULT CODE : " << (xy.add_to_par(5, " , Oh my") == -1? "NOT OK" : "OK") << '\n';
+	cout << "GOT : " << xy.get_paragraph(5) << '\n';
+	xy.write_page();
+	cout << "PRESS ENTER after you check the file\n";
+	getchar();
+	xy.open_page(sname);
+
+	/// TEST 3. Delete paragraph 5
+	cout << "TEST 3\nDELETE paragraph : " << xy.del_paragraph(5) << '\n';
+	xy.write_page();
+	cout << "PRESS ENTER after you check the file\n";
+	getchar();
+	xy.open_page(sname);
+	cout << "NOW : " << xy.get_paragraph(5) << '\n';
+
+	/// TEST 5. DELETE page
+	cout << "TEST 5\nDELETE page : " << xy.delete_page() << '\n';
+	cout << "CHECK : " << (fopen(sname, "r") == 0 ? "OK" : "NOT OK") << '\n';
+	return;
 }
